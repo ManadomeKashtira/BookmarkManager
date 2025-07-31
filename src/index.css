@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Electron-specific styles */
+.electron-app {
+  /* Prevent text selection in desktop app */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.electron-app input,
+.electron-app textarea,
+.electron-app [contenteditable] {
+  /* Allow text selection in input fields */
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Platform-specific styles */
+.platform-win32 {
+  /* Windows-specific styles */
+}
+
+.platform-darwin {
+  /* macOS-specific styles */
+}
+
+.platform-linux {
+  /* Linux-specific styles */
+}
+
+/* Custom scrollbar for Electron */
+.electron-app ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.electron-app ::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.electron-app ::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.electron-app ::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

@@ -1,0 +1,127 @@
+{
+  "name": "bookmark-manager-desktop",
+  "version": "1.0.0",
+  "description": "Modern Bookmark Library Manager - Desktop Application",
+  "main": "public/electron.js",
+  "homepage": "http://./",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "export": "next build && next export",
+    "electron": "cross-env NODE_ENV=production electron .",
+    "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron-pack": "npm run build && electron-builder",
+    "preelectron-pack": "npm run build",
+    "dist": "npm run build && electron-builder --publish=never",
+    "dist-win": "npm run build && electron-builder --win --publish=never",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "dependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "autoprefixer": "^10.4.0",
+    "date-fns": "^2.30.0",
+    "lucide-react": "^0.263.1",
+    "next": "^15.3.4",
+    "postcss": "^8.4.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "recharts": "^2.15.4",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3",
+    "electron-is-dev": "^2.0.0",
+    "electron-updater": "^6.6.2",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.bookmarkmanager.desktop",
+    "productName": "Bookmark Manager",
+    "copyright": "Copyright © 2025 Bookmark Manager",
+    "directories": {
+      "output": "final-build",
+      "buildResources": "build"
+    },
+    "files": [
+      "out/**/*",
+      "public/electron.js",
+      "public/preload.js",
+      "public/icon.*",
+      "node_modules/**/*",
+      "!node_modules/.cache",
+      "!node_modules/electron/dist",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+      "!**/node_modules/*.d.ts",
+      "!**/node_modules/.bin",
+      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+      "!.editorconfig",
+      "!**/._*",
+      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
+      "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
+      "!**/{appveyor.yml,.travis.yml,circle.yml}",
+      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
+    ],
+    "extraResources": [
+      {
+        "from": "public/icon.png",
+        "to": "icon.png"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "dir",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "requestedExecutionLevel": "asInvoker",
+      "publisherName": "Bookmark Manager",
+      "verifyUpdateCodeSignature": false,
+      "certificateFile": null,
+      "certificatePassword": null,
+      "signingHashAlgorithms": null,
+      "sign": null
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Bookmark Manager",
+      "uninstallDisplayName": "Bookmark Manager",
+      "license": "LICENSE.txt",
+      "deleteAppDataOnUninstall": false
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/icon.icns",
+      "category": "public.app-category.productivity"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "public/icon.png",
+      "category": "Office"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "bookmark-manager",
+      "repo": "bookmark-manager-desktop"
+    }
+  },
+  "author": "Bookmark Manager <support@bookmarkmanager.com>",
+  "license": "MIT",
+  "keywords": [],
+  "type": "commonjs"
+}

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator</title>
+</head>
+<body>
+    <canvas id="iconCanvas" width="256" height="256" style="border: 1px solid #ccc;"></canvas>
+    <br><br>
+    <button onclick="downloadIcon('icon.png')">Download PNG</button>
+    <button onclick="downloadIcon('icon.ico')">Download ICO</button>
+    
+    <script>
+        const canvas = document.getElementById('iconCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Create a bookmark icon
+        function createBookmarkIcon() {
+            // Clear canvas
+            ctx.clearRect(0, 0, 256, 256);
+            
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, 256);
+            gradient.addColorStop(0, '#3B82F6');
+            gradient.addColorStop(1, '#1E40AF');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 256, 256);
+            
+            // Bookmark shape
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.moveTo(64, 48);
+            ctx.lineTo(192, 48);
+            ctx.lineTo(192, 208);
+            ctx.lineTo(128, 168);
+            ctx.lineTo(64, 208);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Add shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.beginPath();
+            ctx.moveTo(68, 52);
+            ctx.lineTo(196, 52);
+            ctx.lineTo(196, 212);
+            ctx.lineTo(132, 172);
+            ctx.lineTo(68, 212);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Bookmark icon
+            ctx.fillStyle = '#3B82F6';
+            ctx.font = 'bold 48px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('📚', 128, 128);
+        }
+        
+        function downloadIcon(filename) {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        // Create the icon
+        createBookmarkIcon();
+    </script>
+</body>
+</html>
