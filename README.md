@@ -1,5 +1,6 @@
 Modern Bookmark aplication
- -requirement python, node js
+
+-requirement python, node js
  How to Use 
    - NPM install
    - NPM Run BUILD
