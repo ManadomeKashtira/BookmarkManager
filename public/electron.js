@@ -176,8 +176,8 @@ function createWindow() {
       }
     }
 
-    // Focus on window and open dev tools for debugging
-    mainWindow.webContents.openDevTools();
+    // Focus on window
+    // Developer tools disabled for production use
   });
 
   // Handle window closed
