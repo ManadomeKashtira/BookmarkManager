@@ -77,6 +77,7 @@ export interface BackupMetadata {
   appVersion: string;
   totalBookmarks: number;
   totalCategories: number;
+  totalMemos?: number;
   checksum: string;
   description?: string;
   hierarchicalStructure?: {
@@ -92,6 +93,7 @@ export interface CompleteBackupData {
   metadata: BackupMetadata;
   bookmarks: Bookmark[];
   categories: Category[];
+  memos?: Memo[];
   settings: AppSettings;
   userPreferences: {
     selectedCategory: string;
@@ -102,6 +104,7 @@ export interface CompleteBackupData {
   statistics: {
     totalVisits: number;
     favoriteCount: number;
+    favoriteMemos?: number;
     lastBackupDate: string;
     hierarchicalInfo?: {
       totalFolders: number;
@@ -121,11 +124,72 @@ export interface AnalyticsData {
   topBookmarks: Bookmark[]; // Top 5 most visited
 }
 
-// For tailwindcss-animate plugin (if not already globally typed)
-declare module 'tailwindcss/plugin' {
-  interface TailwindPlugin {
-    (options: any): void;
-    handler: (options: any) => void;
-    config?: any;
-  }
+export interface PasswordGeneratorSettings {
+  length: number;
+  includeUppercase: boolean;
+  includeLowercase: boolean;
+  includeNumbers: boolean;
+  includeSymbols: boolean;
+  excludeSimilar: boolean; // Exclude similar characters like l, 1, I, O, 0
+  excludeAmbiguous: boolean; // Exclude ambiguous characters
+  customExclude: string; // Custom characters to exclude
 }
+
+export interface PasswordStrength {
+  score: number; // 0-100
+  level: 'very-weak' | 'weak' | 'medium' | 'strong' | 'very-strong';
+  feedback: string[];
+  entropy: number; // Bits of entropy
+  timeToCrack: string; // Estimated time to crack
+}
+
+export interface GeneratedPassword {
+  password: string;
+  strength: PasswordStrength;
+  timestamp: Date;
+  settings: PasswordGeneratorSettings;
+}
+
+// Memo-related types
+export interface MemoContent {
+  type: 'text' | 'paragraph' | 'heading' | 'list' | 'list-item';
+  content: string;
+  formatting?: {
+    bold?: boolean;
+    italic?: boolean;
+    underline?: boolean;
+    strikethrough?: boolean;
+    color?: string;
+    backgroundColor?: string;
+    fontSize?: number;
+    fontFamily?: string;
+  };
+  children?: MemoContent[];
+  listType?: 'ordered' | 'unordered';
+  level?: number; // For nested lists
+}
+
+export interface Memo {
+  id: string;
+  title: string;
+  content: MemoContent[];
+  backgroundColor: string;
+  gridBackground: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  tags: string[];
+  isFavorite: boolean;
+  category?: string;
+}
+
+export interface MemoSettings {
+  defaultBackgroundColor: string;
+  defaultGridBackground: boolean;
+  autoSave: boolean;
+  autoSaveInterval: number; // in milliseconds
+  maxMemos: number;
+  defaultFontFamily: string;
+  defaultFontSize: number;
+}
+
+

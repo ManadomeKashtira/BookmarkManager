@@ -11,10 +11,14 @@ import { SettingsModal } from '@/components/SettingsModal';
 import { ImportExportModal } from '@/components/ImportExportModal';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { ConfirmationModal } from '@/components/ConfirmationModal';
+import { PasgenModal } from '@/components/PasgenModal';
+import { MemoView } from '@/components/MemoView';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { useSettings } from '@/hooks/useSettings';
 import { useAnalytics } from '@/hooks/useAnalytics';
-import type { Bookmark } from '@/types/bookmark';
+import { useElectron } from '@/hooks/useElectron';
+import { useMemos } from '@/hooks/useMemos';
+import type { Bookmark, Memo } from '@/types/bookmark';
 
 export default function HomePage() {
   const {
@@ -50,6 +54,17 @@ export default function HomePage() {
     toggleCategoryExpansion,
   } = useBookmarks();
 
+  // Memo functionality
+  const {
+    memos,
+    loading: memosLoading,
+    addMemo,
+    updateMemo,
+    deleteMemo,
+    toggleFavorite: toggleMemoFavorite,
+    importMemos
+  } = useMemos();
+
   const { settings, updateSettings, updateTheme, resetSettings, restoreSettings, isInitialized: settingsInitialized } = useSettings();
   const analytics = useAnalytics(allBookmarks);
 
@@ -60,7 +75,9 @@ export default function HomePage() {
   const [isDeleteConfirmationModalOpen, setIsDeleteConfirmationModalOpen] = useState(false);
   const [isLoadingDelete, setIsLoadingDelete] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isPasgenModalOpen, setIsPasgenModalOpen] = useState(false);
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | undefined>();
+  const [currentView, setCurrentView] = useState<'bookmarks' | 'memos'>('bookmarks');
 
   const [isDeleteCategoryConfirmationModalOpen, setIsDeleteCategoryConfirmationModalOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
@@ -83,6 +100,10 @@ export default function HomePage() {
     }
     setIsAddModalOpen(false);
     setCategoryForNewBookmark(null);
+  };
+
+  const handleAddMemo = (memoData: Omit<Memo, 'id' | 'createdAt' | 'updatedAt'>) => {
+    addMemo(memoData);
   };
 
   const handleEditBookmark = (bookmark: Bookmark) => {
@@ -133,25 +154,14 @@ export default function HomePage() {
 
   const handleConfirmCreateFolder = async () => {
     if (newFolderNameForConfirmation) {
-      addCategory(newFolderNameForConfirmation);
-      setCategoryForNewBookmark(newFolderNameForConfirmation);
-      setIsAddModalOpen(true);
+      await addCategoryWithPath(newFolderNameForConfirmation);
+      setNewFolderNameForConfirmation(null);
+      setIsCreateFolderConfirmationModalOpen(false);
     }
-    setIsCreateFolderConfirmationModalOpen(false);
-    setNewFolderNameForConfirmation(null);
   };
 
   const handleRequestCreateNewFolder = () => {
-    const defaultFolderName = "New Folder";
-    let fullPath = defaultFolderName;
-    if (selectedCategory && !['All', 'Favorites', 'Recent'].includes(selectedCategory)) {
-      fullPath = `${selectedCategory}/${defaultFolderName}`;
-    }
-    const result = addCategoryWithPath(fullPath, { autoRename: true });
-    if (result) {
-      setAutoRenameFolderPath(result.path);
-      setSelectedCategory(result.path);
-    }
+    setIsCreateFolderConfirmationModalOpen(true);
   };
 
   const handleRenameCategory = (oldCategoryName: string, newCategoryName: string) => {
@@ -159,42 +169,40 @@ export default function HomePage() {
   };
 
   const handleDeleteCategory = (categoryName: string) => {
-    deleteCategory(categoryName);
+    if (settings.confirmDelete) {
+      if (window.confirm(`Are you sure you want to delete the category "${categoryName}"? This will also delete all bookmarks in this category.`)) {
+        deleteCategory(categoryName);
+      }
+    } else {
+      deleteCategory(categoryName);
+    }
   };
 
-  const pageStyle: React.CSSProperties = settingsInitialized ? {
-    '--theme-primary-color': settings.theme.primaryColor,
-    '--theme-secondary-color': settings.theme.secondaryColor,
-    '--theme-accent-color': settings.theme.accentColor,
-    '--theme-bg-color': settings.theme.backgroundColor,
-  } : {};
-
   const getAnimationClass = () => {
-    if (!settingsInitialized) return '';
     switch (settings.theme.animation) {
       case 'none': return '';
-      case 'subtle': return 'transition-all duration-150';
-      case 'bouncy': return 'transition-all duration-300 ease-bounce';
+      case 'subtle': return 'transition-all duration-200';
+      case 'smooth': return 'transition-all duration-300 ease-in-out';
+      case 'bouncy': return 'transition-all duration-300 ease-out';
       default: return 'transition-all duration-200';
     }
   };
 
   const getDensityClass = () => {
-    if (!settingsInitialized) return 'gap-6';
     switch (settings.theme.density) {
       case 'compact': return 'gap-3';
-      case 'spacious': return 'gap-8';
-      default: return 'gap-6';
+      case 'comfortable': return 'gap-4';
+      case 'spacious': return 'gap-6';
+      default: return 'gap-4';
     }
   };
 
   const getCardBackgroundClass = () => {
-    if (!settingsInitialized) return 'bg-white/80 backdrop-blur-sm';
     switch (settings.theme.cardStyle) {
-        case 'glass': return 'bg-card/80 backdrop-blur-sm';
-        case 'solid': return 'bg-card';
-        case 'minimal': return 'bg-transparent';
-        default: return 'bg-card/80 backdrop-blur-sm';
+      case 'glass': return 'bg-card/60 backdrop-blur-md';
+      case 'solid': return 'bg-card';
+      case 'minimal': return 'bg-card/80 backdrop-blur-sm';
+      default: return 'bg-card/80 backdrop-blur-sm';
     }
   };
 
@@ -207,10 +215,7 @@ export default function HomePage() {
   }
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50"
-      style={pageStyle}
-    >
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
       <div className="flex">
         <Sidebar
           categories={categories}
@@ -227,6 +232,9 @@ export default function HomePage() {
           onShowSettings={() => setIsSettingsModalOpen(true)}
           onShowImport={() => setIsImportModalOpen(true)}
           onShowExport={() => setIsExportModalOpen(true)}
+          onShowPasgen={() => {
+            setIsPasgenModalOpen(true);
+          }}
           onUpdateBookmarkCategory={updateBookmarkCategory}
           onRequestDeleteCategoryContents={handleRequestDeleteCategoryContents}
           onRequestCreateNewFolder={handleRequestCreateNewFolder}
@@ -239,65 +247,106 @@ export default function HomePage() {
         />
 
         <div className="flex-1">
-          <SearchBar
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            selectedCategory={selectedCategory}
-            totalResults={bookmarks.length}
-          />
-
-          <div className="p-6">
-            {isLoading ? (
-              <LoadingSpinner viewMode={viewMode} />
-            ) : bookmarks.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="text-6xl mb-4">📚</div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">No bookmarks found</h3>
-                <p className="text-muted-foreground mb-6">
-                  {searchQuery
-                    ? `No bookmarks match "${searchQuery}". Try adjusting your search.`
-                    : selectedCategory !== "All"
-                        ? `No bookmarks in "${selectedCategory}". Add some or switch categories.`
-                        : 'Start building your bookmark library by adding your first bookmark.'
-                  }
-                </p>
-                <button
-                  onClick={() => {
-                    setCategoryForNewBookmark(selectedCategory && !['All', 'Favorites', 'Recent'].includes(selectedCategory) ? selectedCategory : null);
-                    setIsAddModalOpen(true);
-                  }}
-                  className={`bg-primary text-primary-foreground px-6 py-3 rounded-xl font-medium hover:opacity-90 hover:scale-105 hover:shadow-lg ${getAnimationClass()}`}
-                >
-                  Add New Bookmark
-                </button>
-              </div>
-            ) : (
-              <div className={
-                viewMode === 'grid'
-                  ? `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${getDensityClass()}`
-                  : `space-y-4 ${settings.theme.density === 'compact' ? 'space-y-2' : settings.theme.density === 'spacious' ? 'space-y-6' : 'space-y-4'}`
-              }>
-                {bookmarks.map(bookmark => (
-                  <BookmarkCard
-                    key={bookmark.id}
-                    bookmark={bookmark}
-                    viewMode={viewMode}
-                    onToggleFavorite={toggleFavorite}
-                    onEdit={handleEditBookmark}
-                    onDelete={handleDeleteBookmark}
-                    onVisit={handleVisitBookmark}
-                    cardBackgroundClass={getCardBackgroundClass()}
-                    showDescriptions={settings.showDescriptions}
-                    showVisitCount={settings.showVisitCount}
-                  />
-                ))}
-              </div>
-            )}
+          {/* View Toggle */}
+          <div className="flex items-center justify-center p-4 border-b border-border/20">
+            <div className="flex bg-muted rounded-lg p-1">
+              <button
+                onClick={() => setCurrentView('bookmarks')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                  currentView === 'bookmarks'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Bookmarks
+              </button>
+              <button
+                onClick={() => setCurrentView('memos')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                  currentView === 'memos'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Memos
+              </button>
+            </div>
           </div>
+
+          {currentView === 'bookmarks' ? (
+            <>
+              <SearchBar
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+                selectedCategory={selectedCategory}
+                totalResults={bookmarks.length}
+              />
+
+              <div className="p-6">
+                {isLoading ? (
+                  <LoadingSpinner viewMode={viewMode} />
+                ) : bookmarks.length === 0 ? (
+                  <div className="text-center py-16">
+                    <div className="text-6xl mb-6">📚</div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-3">No bookmarks found</h3>
+                    <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                      {searchQuery
+                        ? `No bookmarks match "${searchQuery}". Try adjusting your search.`
+                        : selectedCategory !== "All"
+                            ? `No bookmarks in "${selectedCategory}". Add some or switch categories.`
+                            : 'Start building your bookmark library by adding your first bookmark.'
+                      }
+                    </p>
+                    <button
+                      onClick={() => {
+                        setCategoryForNewBookmark(selectedCategory && !['All', 'Favorites', 'Recent'].includes(selectedCategory) ? selectedCategory : null);
+                        setIsAddModalOpen(true);
+                      }}
+                      className="modern-btn modern-btn-primary px-8 py-4 text-lg"
+                    >
+                      Add New Bookmark
+                    </button>
+                  </div>
+                ) : (
+                  <div className={
+                    viewMode === 'grid'
+                      ? 'modern-grid'
+                      : 'modern-list'
+                  }>
+                    {bookmarks.map(bookmark => (
+                      <BookmarkCard
+                        key={bookmark.id}
+                        bookmark={bookmark}
+                        viewMode={viewMode}
+                        onToggleFavorite={toggleFavorite}
+                        onEdit={handleEditBookmark}
+                        onDelete={handleDeleteBookmark}
+                        onVisit={handleVisitBookmark}
+                        cardBackgroundClass="bg-white"
+                        showDescriptions={settings.showDescriptions}
+                        showVisitCount={settings.showVisitCount}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="p-6">
+              <MemoView
+                memos={memos}
+                categories={categoryNamesForModal}
+                onAddMemo={handleAddMemo}
+                onUpdateMemo={updateMemo}
+                onDeleteMemo={deleteMemo}
+                onToggleFavorite={toggleMemoFavorite}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -309,6 +358,7 @@ export default function HomePage() {
           setCategoryForNewBookmark(null);
         }}
         onAdd={handleAddOrUpdateBookmark}
+        onAddMemo={handleAddMemo}
         categories={categoryNamesForModal}
         editingBookmark={editingBookmark}
         initialCategory={categoryForNewBookmark}
@@ -393,6 +443,13 @@ export default function HomePage() {
         confirmText="Delete Category Bookmarks"
         isDestructive={true}
         isLoading={isLoadingCategoryDelete}
+      />
+
+      <PasgenModal
+        isOpen={isPasgenModalOpen}
+        onClose={() => {
+          setIsPasgenModalOpen(false);
+        }}
       />
     </div>
   );

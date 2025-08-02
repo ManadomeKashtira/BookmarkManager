@@ -16,7 +16,9 @@ import {
   Edit,
   ChevronRight,
   ChevronDown,
-  Folder
+  Folder,
+  Shield,
+  FileText
 } from 'lucide-react';
 import type { Category, BookmarkStats } from '@/types/bookmark';
 import { TreeCategoryItem } from './TreeCategoryItem';
@@ -28,11 +30,14 @@ interface SidebarProps {
   selectedCategory: string;
   onCategorySelect: (category: string) => void;
   stats: BookmarkStats;
+  currentView?: 'bookmarks' | 'memos';
+  onViewChange?: (view: 'bookmarks' | 'memos') => void;
   onAddBookmark: () => void;
   onShowAnalytics: () => void;
   onShowSettings: () => void;
   onShowImport: () => void;
   onShowExport: () => void;
+  onShowPasgen: () => void;
   onUpdateBookmarkCategory: (bookmarkId: string, newCategoryName: string) => void;
   onRequestDeleteCategoryContents: (categoryName: string) => void;
   onRequestCreateNewFolder: () => void;
@@ -53,11 +58,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   selectedCategory,
   onCategorySelect,
   stats,
+  currentView = 'bookmarks',
+  onViewChange,
   onAddBookmark,
   onShowAnalytics,
   onShowSettings,
   onShowImport,
   onShowExport,
+  onShowPasgen,
   onUpdateBookmarkCategory,
   onRequestDeleteCategoryContents,
   onRequestCreateNewFolder,
@@ -321,156 +329,210 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
 
   return (
-    <div className="w-80 bg-white/90 backdrop-blur-sm border-r border-gray-200/50 h-screen flex flex-col sticky top-0">
-      <div className="p-6">
-        <div className="flex items-center gap-3 mb-8">
+    <div className="modern-sidebar w-80 h-screen flex flex-col p-6 modern-scrollbar">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-            <BookmarkIconLucide className="w-6 h-6 text-white" />
+            {currentView === 'bookmarks' ? (
+              <BookmarkIconLucide className="w-6 h-6 text-white" />
+            ) : (
+              <FileText className="w-6 h-6 text-white" />
+            )}
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">BookmarkPro</h1>
-            <p className="text-sm text-gray-500">Your Library</p>
+            <h1 className="text-xl font-bold text-gray-900">
+              {currentView === 'bookmarks' ? 'Bookmarks' : 'Memos'}
+            </h1>
+            <p className="text-sm text-gray-500">
+              {currentView === 'bookmarks' ? 'Organize your web' : 'Rich text notes'}
+            </p>
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 mb-6">
+        {/* View Toggle */}
+        {onViewChange && (
+          <div className="flex gap-2 mb-4 p-1 bg-gray-100 rounded-lg">
             <button
-            onClick={onAddBookmark}
-            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl py-3 px-4 font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25 flex items-center justify-center gap-2"
-            >
-            <Plus className="w-5 h-5" />
-            Add Bookmark
-            </button>
-            <button
-                onClick={() => {
-                  onRequestCreateNewFolder();
-                }}
-                className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl py-3 px-4 font-medium hover:from-green-600 hover:to-green-700 transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-green-500/25 flex items-center justify-center gap-2"
-            >
-                <FolderPlus className="w-5 h-5" />
-                Create Folder
-            </button>
-        </div>
-
-
-        <div className="space-y-1 mb-6">
-          {/* Back button for subfolders */}
-          {selectedCategory && !['All', 'Favorites', 'Recent'].includes(selectedCategory) && selectedCategory.includes('/') && (
-            <button
-              onClick={() => {
-                const parentPath = selectedCategory.split('/').slice(0, -1).join('/');
-                onCategorySelect(parentPath || 'All');
-              }}
-              className="w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 border border-gray-200 mb-2"
-            >
-              <ChevronRight className="w-4 h-4 rotate-180" />
-              <span className="flex-1 text-left">Back to Parent</span>
-            </button>
-          )}
-
-          {menuItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => onCategorySelect(item.id)}
-              className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 text-sm font-medium ${
-                selectedCategory === item.id
-                  ? 'bg-blue-500 text-white shadow-md shadow-blue-500/20'
-                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+              onClick={() => onViewChange('bookmarks')}
+              className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                currentView === 'bookmarks'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <item.icon className="w-4 h-4" />
-              <span className="flex-1 text-left">{item.label}</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                selectedCategory === item.id
-                  ? 'bg-white/20 text-white'
-                  : 'bg-gray-200 text-gray-600'
-              }`}>
-                {item.count}
-              </span>
+              <BookmarkIconLucide className="w-4 h-4 inline mr-2" />
+              Bookmarks
             </button>
-          ))}
-        </div>
-
-        <div
-          className="mb-6"
-          onContextMenu={(e) => handleContextMenuAction(e, CREATE_NEW_FOLDER_CONTEXT_KEY)} // Allow right click on general area
-        >
-          <div className="flex items-center justify-between gap-2 mb-3">
-            <div className="flex items-center gap-2">
-              <FolderOpen className="w-4 h-4 text-gray-500" />
-              <h3 className="font-semibold text-gray-800 text-sm">Categories</h3>
-            </div>
+            <button
+              onClick={() => onViewChange('memos')}
+              className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                currentView === 'memos'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <FileText className="w-4 h-4 inline mr-2" />
+              Memos
+            </button>
           </div>
+        )}
 
-          {/* Breadcrumb Navigation */}
-          {selectedCategory && !['All', 'Favorites', 'Recent'].includes(selectedCategory) && (
-            <div className="mb-3 p-2 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-1 text-xs text-gray-600">
-                <button
-                  onClick={() => onCategorySelect('All')}
-                  className="hover:text-blue-600 hover:underline"
-                >
-                  All
-                </button>
-                {selectedCategory.split('/').map((part, index, array) => {
-                  const pathToHere = array.slice(0, index + 1).join('/');
-                  const isLast = index === array.length - 1;
-
-                  return (
-                    <div key={index} className="flex items-center gap-1">
-                      <span className="text-gray-400">/</span>
-                      {isLast ? (
-                        <span className="font-medium text-gray-800">{part}</span>
-                      ) : (
-                        <button
-                          onClick={() => onCategorySelect(pathToHere)}
-                          className="hover:text-blue-600 hover:underline"
-                        >
-                          {part}
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+        {/* Action Buttons */}
+        <div className="space-y-3">
+          {currentView === 'bookmarks' ? (
+            <>
+              <button
+                onClick={onAddBookmark}
+                className="modern-btn modern-btn-primary w-full"
+              >
+                <Plus className="w-4 h-4" />
+                Add Bookmark
+              </button>
+              <button
+                onClick={onRequestCreateNewFolder}
+                className="modern-btn modern-btn-secondary w-full"
+              >
+                <FolderPlus className="w-4 h-4" />
+                Create Folder
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={onAddBookmark}
+              className="modern-btn modern-btn-primary w-full"
+            >
+              <Plus className="w-4 h-4" />
+              Add Memo
+            </button>
           )}
-          <div className="space-y-1 max-h-80 overflow-y-auto pr-1">
-            {renderCategoryTree(categoryTree)}
-          </div>
+          <button
+            onClick={onShowPasgen}
+            className="modern-btn w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:from-purple-600 hover:to-pink-700 hover:shadow-lg hover:shadow-purple-500/25"
+          >
+            <Shield className="w-4 h-4" />
+            Pasgen
+          </button>
         </div>
       </div>
 
-      <div className="mt-auto border-t border-gray-200 p-4 space-y-1">
+      {/* Navigation Menu */}
+      <div className="space-y-2 mb-6">
+        {menuItems.map(item => (
+          <button
+            key={item.id}
+            onClick={() => onCategorySelect(item.id)}
+            className={`modern-sidebar-item w-full ${
+              selectedCategory === item.id ? 'modern-sidebar-item active' : ''
+            }`}
+          >
+            <item.icon className="w-4 h-4" />
+            <span className="flex-1 text-left">{item.label}</span>
+            <span className={`text-xs px-2 py-1 rounded-full ${
+              selectedCategory === item.id
+                ? 'bg-blue-100 text-blue-700'
+                : 'bg-gray-100 text-gray-600'
+            }`}>
+              {item.count}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Categories Section - Only show for bookmarks */}
+      {currentView === 'bookmarks' && (
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-4">
+            <FolderOpen className="w-4 h-4 text-gray-500" />
+            <h3 className="font-semibold text-gray-800 text-sm">Categories</h3>
+          </div>
+
+        {/* Breadcrumb Navigation */}
+        {selectedCategory && !['All', 'Favorites', 'Recent'].includes(selectedCategory) && (
+          <div className="mb-4 p-3 bg-gray-50/80 rounded-lg border border-gray-200/60">
+            <div className="flex items-center gap-1 text-xs text-gray-600">
+              <button
+                onClick={() => onCategorySelect('All')}
+                className="hover:text-blue-600 hover:underline transition-colors"
+              >
+                All
+              </button>
+              {selectedCategory.split('/').map((part, index, array) => {
+                const pathToHere = array.slice(0, index + 1).join('/');
+                const isLast = index === array.length - 1;
+
+                return (
+                  <div key={index} className="flex items-center gap-1">
+                    <span className="text-gray-400">/</span>
+                    {isLast ? (
+                      <span className="font-medium text-gray-800">{part}</span>
+                    ) : (
+                      <button
+                        onClick={() => onCategorySelect(pathToHere)}
+                        className="hover:text-blue-600 hover:underline transition-colors"
+                      >
+                        {part}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Category Tree */}
+        <div className="space-y-1 max-h-80 overflow-y-auto pr-2 modern-scrollbar">
+          {renderCategoryTree(categoryTree)}
+        </div>
+        </div>
+      )}
+
+      {/* Footer Stats */}
+      <div className="mt-6 pt-6 border-t border-gray-200/60">
+        <div className="grid grid-cols-2 gap-4 text-xs mb-4">
+          <div className="text-center p-3 bg-gray-50/80 rounded-lg">
+            <div className="font-semibold text-gray-900">{stats.total}</div>
+            <div className="text-gray-500">Total</div>
+          </div>
+          <div className="text-center p-3 bg-gray-50/80 rounded-lg">
+            <div className="font-semibold text-gray-900">{stats.categories}</div>
+            <div className="text-gray-500">Categories</div>
+          </div>
+        </div>
+
+        {/* Utility Buttons */}
+        <div className="space-y-2">
           <button
             onClick={onShowAnalytics}
-            className="w-full flex items-center gap-3 p-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-all duration-200"
+            className="modern-sidebar-item w-full"
           >
             <BarChart3 className="w-4 h-4" />
-            <span className="font-medium">Analytics</span>
+            <span className="flex-1 text-left">Analytics</span>
           </button>
           <button
             onClick={onShowImport}
-            className="w-full flex items-center gap-3 p-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-all duration-200"
+            className="modern-sidebar-item w-full"
           >
             <Upload className="w-4 h-4" />
-            <span className="font-medium">Import</span>
+            <span className="flex-1 text-left">Import</span>
           </button>
           <button
             onClick={onShowExport}
-            className="w-full flex items-center gap-3 p-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-all duration-200"
+            className="modern-sidebar-item w-full"
           >
             <Download className="w-4 h-4" />
-            <span className="font-medium">Export</span>
+            <span className="flex-1 text-left">Export</span>
           </button>
           <button
             onClick={onShowSettings}
-            className="w-full flex items-center gap-3 p-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-all duration-200"
+            className="modern-sidebar-item w-full"
           >
             <Settings className="w-4 h-4" />
-            <span className="font-medium">Settings</span>
+            <span className="flex-1 text-left">Settings</span>
           </button>
         </div>
+      </div>
 
         {contextMenu.visible && (
           <div

@@ -2,161 +2,233 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-  }
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+  --radius: 0.75rem;
+  --sidebar-width: 280px;
+  --header-height: 64px;
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 217.2 91.2% 59.8%;
+  --primary-foreground: 222.2 84% 4.9%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 224.3 76.3% 94.1%;
 }
 
-/* Electron-specific styles */
-.electron-app {
-  /* Prevent text selection in desktop app */
-  -webkit-user-select: none;
-  user-select: none;
+* {
+  border-color: hsl(var(--border));
 }
 
-.electron-app input,
-.electron-app textarea,
-.electron-app [contenteditable] {
-  /* Allow text selection in input fields */
-  -webkit-user-select: text;
-  user-select: text;
+body {
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+  font-feature-settings: "rlig" 1, "calt" 1;
 }
 
-/* Platform-specific styles */
-.platform-win32 {
-  /* Windows-specific styles */
+/* Modern Card Styles */
+.modern-card {
+  @apply bg-white rounded-xl border border-gray-200/60 shadow-sm hover:shadow-md transition-all duration-200;
+  backdrop-filter: blur(10px);
 }
 
-.platform-darwin {
-  /* macOS-specific styles */
+.modern-card-hover {
+  @apply hover:shadow-lg hover:border-gray-300/80 hover:scale-[1.02] transition-all duration-300;
 }
 
-.platform-linux {
-  /* Linux-specific styles */
+/* Modern Sidebar Styles */
+.modern-sidebar {
+  @apply bg-white/80 backdrop-blur-xl border-r border-gray-200/60;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
 
-/* Custom scrollbar for Electron */
-.electron-app ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+.modern-sidebar-item {
+  @apply flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200;
 }
 
-.electron-app ::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
+.modern-sidebar-item:hover {
+  @apply bg-gray-50/80 text-gray-900;
 }
 
-.electron-app ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
+.modern-sidebar-item.active {
+  @apply bg-blue-50 text-blue-700 border border-blue-200/50;
 }
 
-.electron-app ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+/* Modern Button Styles */
+.modern-btn {
+  @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200;
 }
 
-/* Custom styles for better desktop experience */
-.electron-app .drag-region {
-  -webkit-app-region: drag;
+.modern-btn-primary {
+  @apply bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/25;
 }
 
-.electron-app .no-drag {
-  -webkit-app-region: no-drag;
+.modern-btn-secondary {
+  @apply bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200;
 }
 
-/* Windows-specific styles */
-.platform-win32 .window-controls {
-  /* Windows window controls styling */
+.modern-btn-ghost {
+  @apply text-gray-600 hover:text-gray-900 hover:bg-gray-100;
 }
 
-/* Smooth transitions for desktop app */
-.electron-app * {
+/* Modern Input Styles */
+.modern-input {
+  @apply w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white/80 backdrop-blur-sm;
+  @apply focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200;
+}
+
+/* Modern Modal Styles */
+.modern-modal {
+  @apply fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4;
+}
+
+.modern-modal-content {
+  @apply bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+}
+
+/* Modern Search Bar */
+.modern-search {
+  @apply relative;
+}
+
+.modern-search-input {
+  @apply w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-white/80 backdrop-blur-sm;
+  @apply focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200;
+}
+
+/* Modern Category Icons */
+.category-icon {
+  @apply w-5 h-5 rounded-md flex items-center justify-center text-white font-semibold text-xs;
+}
+
+/* Modern Grid Layout */
+.modern-grid {
+  @apply grid gap-6;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+/* Modern List Layout */
+.modern-list {
+  @apply space-y-4;
+}
+
+/* Modern Loading States */
+.modern-loading {
+  @apply animate-pulse bg-gray-200 rounded-lg;
+}
+
+/* Modern Scrollbar */
+.modern-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(203 213 225) transparent;
+}
+
+.modern-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modern-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modern-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgb(203 213 225);
+  border-radius: 3px;
+}
+
+.modern-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(148 163 184);
+}
+
+/* Password Generator Slider Styles */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #e5e7eb 0%, #e5e7eb 100%);
+  outline: none;
   transition: all 0.2s ease;
 }
 
-/* Focus styles for desktop navigation */
-.electron-app button:focus,
-.electron-app input:focus,
-.electron-app textarea:focus {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
+.slider::-webkit-slider-track {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #e5e7eb 0%, #e5e7eb 100%);
 }
 
-/* Custom variables for theming */
-:root {
-  --theme-primary-color: #3b82f6;
-  --theme-secondary-color: #64748b;
-  --theme-accent-color: #8b5cf6;
-  --theme-bg-color: #ffffff;
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  transition: all 0.2s ease;
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --theme-primary-color: #60a5fa;
-    --theme-secondary-color: #94a3b8;
-    --theme-accent-color: #a78bfa;
-    --theme-bg-color: #1f2937;
-  }
+.slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.slider::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #e5e7eb 0%, #e5e7eb 100%);
+  border: none;
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  transition: all 0.2s ease;
+}
+
+.slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }

@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { X, Upload, Download, FileText, AlertCircle, CheckCircle, Shield, Database } from 'lucide-react';
-import type { Bookmark, Category, AppSettings, SortOption, CompleteBackupData } from '@/types/bookmark';
+import type { Bookmark, Category, AppSettings, SortOption, CompleteBackupData, Memo } from '@/types/bookmark';
 import { defaultFaviconName } from '@/lib/icons';
 import { createCompleteBackup, exportBackupFile, parseBackupFile } from '@/lib/backupService';
 
@@ -17,7 +17,9 @@ interface ImportExportModalProps {
     viewMode: 'grid' | 'list';
     sortBy: SortOption;
   };
+  memos?: Memo[];
   onImportBookmarks: (bookmarks: Bookmark[]) => void;
+  onImportMemos?: (memos: Memo[]) => void;
   onRestoreCompleteBackup: (backupData: CompleteBackupData) => void;
   mode: 'import' | 'export';
 }
@@ -29,7 +31,9 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
   categories,
   settings,
   userPreferences,
+  memos = [],
   onImportBookmarks,
+  onImportMemos,
   onRestoreCompleteBackup,
   mode
 }) => {
@@ -59,7 +63,8 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
       currentBookmarks,
       categories,
       settings,
-      userPreferences
+      userPreferences,
+      memos
     );
     exportBackupFile(backupData);
     handleClose();
@@ -289,9 +294,13 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
             onRestoreCompleteBackup(backupResult.data);
             setImportStatus('success');
 
-            // Enhanced success message with hierarchical folder info
+            // Enhanced success message with hierarchical folder info and memos
             const hierarchicalInfo = backupResult.data.metadata?.hierarchicalStructure;
             let message = `Successfully restored complete backup with ${backupResult.data.bookmarks.length} bookmarks`;
+
+            if (backupResult.data.memos && backupResult.data.memos.length > 0) {
+              message += `, ${backupResult.data.memos.length} memos`;
+            }
 
             if (hierarchicalInfo && hierarchicalInfo.hasHierarchy) {
               message += `, ${hierarchicalInfo.totalFolders} folders (${hierarchicalInfo.nestedFolders} nested, max depth: ${hierarchicalInfo.maxDepth})`;
@@ -299,7 +308,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
               message += ` and ${backupResult.data.categories.length} categories`;
             }
 
-            message += ', and all settings. 🌳 Hierarchical folder structure preserved!';
+            message += ', and all settings. 🌳 Hierarchical folder structure preserved! 📝 Memos included!';
             setImportMessage(message);
 
             setTimeout(() => {
@@ -318,7 +327,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
           url: b.url,
           description: b.description || '',
           category: b.category || 'Imported',
-          tags: Array.isArray(b.tags) ? b.tags : (typeof b.tags === 'string' ? b.tags.split(',').map(t=>t.trim()).filter(Boolean) : []),
+          tags: Array.isArray(b.tags) ? b.tags : (typeof b.tags === 'string' ? b.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : []),
           isFavorite: !!b.isFavorite,
           dateAdded: b.dateAdded ? new Date(b.dateAdded) : new Date(),
           dateModified: new Date(),
@@ -404,7 +413,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
           {mode === 'export' ? (
             <div className="space-y-6">
               <p className="text-gray-600">
-                Export your {currentBookmarks.length} bookmarks in your preferred format:
+                Export your {currentBookmarks.length} bookmarks and {memos.length} memos in your preferred format:
               </p>
 
               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
@@ -413,17 +422,24 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
                   <h3 className="font-semibold text-blue-900">Complete Backup (.bk)</h3>
                 </div>
                 <p className="text-sm text-blue-700 mb-4">
-                  Export everything: bookmarks, hierarchical folder structure, settings, and preferences in a single file. Perfect for OS reinstalls!
+                  Export everything: bookmarks, memos, hierarchical folder structure, settings, and preferences in a single file. Perfect for OS reinstalls!
                 </p>
-                <div className="text-xs text-blue-600 mb-4">
-                  <div className="font-medium mb-1">🌳 Includes hierarchical folder structure:</div>
-                  <ul className="space-y-0.5 ml-4">
-                    <li>• Nested folder organization</li>
-                    <li>• Folder expansion states</li>
-                    <li>• Complete folder hierarchy</li>
-                    <li>• All bookmark categorization</li>
-                  </ul>
-                </div>
+                                  <div className="text-xs text-blue-600 mb-4">
+                    <div className="font-medium mb-1">🌳 Includes hierarchical folder structure:</div>
+                    <ul className="space-y-0.5 ml-4">
+                      <li>• Nested folder organization</li>
+                      <li>• Folder expansion states</li>
+                      <li>• Complete folder hierarchy</li>
+                      <li>• All bookmark categorization</li>
+                    </ul>
+                    <div className="font-medium mb-1 mt-2">📝 Includes rich text memos:</div>
+                    <ul className="space-y-0.5 ml-4">
+                      <li>• Rich text formatting</li>
+                      <li>• Custom backgrounds</li>
+                      <li>• Grid patterns</li>
+                      <li>• Tags and categories</li>
+                    </ul>
+                  </div>
                 <button
                   onClick={handleCompleteBackup}
                   className="w-full p-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 font-medium flex items-center justify-center gap-2"
@@ -479,7 +495,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
                     </div>
                   )}
                   <p className="text-gray-600">
-                    Import bookmarks from JSON, CSV, HTML files, or restore complete backups from .bk files. 🌳 Hierarchical folder structures are fully preserved. Drag and drop a file or click to browse.
+                    Import bookmarks and memos from JSON, CSV, HTML files, or restore complete backups from .bk files. 🌳 Hierarchical folder structures and 📝 rich text memos are fully preserved. Drag and drop a file or click to browse.
                   </p>
                   
                   <div

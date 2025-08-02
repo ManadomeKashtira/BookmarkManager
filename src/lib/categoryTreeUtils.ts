@@ -57,7 +57,7 @@ export function buildCategoryTree(flatCategories: Category[]): Category[] {
       name: displayName, // Display name (last part of path)
       fullPath, // Keep original full path
       level,
-      parentId: parentPath,
+      parentId: parentPath || undefined,
       isExpanded: cat.isExpanded !== undefined ? cat.isExpanded : (level === 0), // Preserve existing state or default to expanded for root
       children: []
     };

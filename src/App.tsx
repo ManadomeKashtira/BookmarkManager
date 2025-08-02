@@ -7,17 +7,22 @@ import { AnalyticsModal } from './components/AnalyticsModal';
 import { SettingsModal } from './components/SettingsModal';
 import { ImportExportModal } from './components/ImportExportModal';
 import { LoadingSpinner } from './components/LoadingSpinner';
+import { PasgenModal } from './components/PasgenModal';
+import { MemoView } from './components/MemoView';
 import { useBookmarks } from './hooks/useBookmarks';
 import { useSettings } from './hooks/useSettings';
 import { useAnalytics } from './hooks/useAnalytics';
+import { useMemos } from './hooks/useMemos';
 import { useElectron, useElectronMenuEvents } from './hooks/useElectron';
-import { Bookmark } from './types/bookmark';
+import { Bookmark, Memo } from './types/bookmark';
 
 function App() {
   const {
     bookmarks,
     allBookmarks,
     categories,
+    categoryTree,
+    visibleCategories,
     selectedCategory,
     setSelectedCategory,
     searchQuery,
@@ -32,7 +37,13 @@ function App() {
     importBookmarks,
     updateBookmark,
     deleteBookmark,
-    toggleFavorite
+    toggleFavorite,
+    updateBookmarkCategory,
+    deleteBookmarksByCategory,
+    addCategoryWithPath,
+    renameCategory,
+    deleteCategory,
+    toggleCategoryExpansion
   } = useBookmarks();
 
   const { settings, updateSettings, updateTheme, resetSettings } = useSettings();
@@ -40,11 +51,27 @@ function App() {
   const { isElectron, platform } = useElectron();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Memo functionality
+  const {
+    memos,
+    loading: memosLoading,
+    addMemo,
+    updateMemo,
+    deleteMemo,
+    toggleFavorite: toggleMemoFavorite,
+    importMemos
+  } = useMemos();
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isPasgenModalOpen, setIsPasgenModalOpen] = useState(false);
+  const [currentView, setCurrentView] = useState<'bookmarks' | 'memos'>('bookmarks');
+  
+  // Debug state changes
+  console.log('App.tsx: isPasgenModalOpen state:', isPasgenModalOpen); // Debug log
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | undefined>();
 
   // Handle Electron menu events
@@ -68,6 +95,10 @@ function App() {
     } else {
       addBookmark(bookmarkData);
     }
+  };
+
+  const handleAddMemo = (memoData: Omit<Memo, 'id' | 'createdAt' | 'updatedAt'>) => {
+    addMemo(memoData);
   };
 
   const handleEditBookmark = (bookmark: Bookmark) => {
@@ -120,68 +151,108 @@ function App() {
       <div className="flex">
         <Sidebar
           categories={categories}
+          categoryTree={categoryTree}
+          visibleCategories={visibleCategories}
           selectedCategory={selectedCategory}
           onCategorySelect={setSelectedCategory}
           stats={stats}
+          currentView={currentView}
+          onViewChange={setCurrentView}
           onAddBookmark={() => setIsAddModalOpen(true)}
           onShowAnalytics={() => setIsAnalyticsModalOpen(true)}
           onShowSettings={() => setIsSettingsModalOpen(true)}
           onShowImport={() => setIsImportModalOpen(true)}
           onShowExport={() => setIsExportModalOpen(true)}
+          onShowPasgen={() => {
+            console.log('App.tsx: onShowPasgen called, setting isPasgenModalOpen to true'); // Debug log
+            setIsPasgenModalOpen(true);
+          }}
+          onUpdateBookmarkCategory={updateBookmarkCategory}
+          onRequestDeleteCategoryContents={deleteBookmarksByCategory}
+          onRequestCreateNewFolder={() => {
+            const folderName = prompt('Enter folder name:');
+            if (folderName && folderName.trim()) {
+              addCategoryWithPath(folderName.trim());
+            }
+          }}
+          onRenameCategory={renameCategory}
+          onDeleteCategory={deleteCategory}
+          onToggleCategoryExpansion={toggleCategoryExpansion}
+          onAddCategoryWithPath={addCategoryWithPath}
         />
         
         <div className="flex-1">
-          <SearchBar
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            selectedCategory={selectedCategory}
-            totalResults={bookmarks.length}
-            searchInputRef={searchInputRef}
-          />
-          
-          <div className="p-6">
-            {isLoading ? (
-              <LoadingSpinner viewMode={viewMode} />
-            ) : bookmarks.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="text-6xl mb-4">📚</div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No bookmarks found</h3>
-                <p className="text-gray-600 mb-6">
-                  {searchQuery 
-                    ? `No bookmarks match "${searchQuery}". Try adjusting your search.`
-                    : 'Start building your bookmark library by adding your first bookmark.'
-                  }
-                </p>
-                <button
-                  onClick={() => setIsAddModalOpen(true)}
-                  className={`bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25 ${getAnimationClass()}`}
-                >
-                  Add Your First Bookmark
-                </button>
+          {currentView === 'bookmarks' ? (
+            <>
+              <SearchBar
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+                selectedCategory={selectedCategory}
+                totalResults={bookmarks.length}
+                searchInputRef={searchInputRef}
+              />
+              
+              <div className="p-6">
+                {isLoading ? (
+                  <LoadingSpinner viewMode={viewMode} />
+                ) : bookmarks.length === 0 ? (
+                  <div className="text-center py-16">
+                    <div className="text-6xl mb-4">📚</div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No bookmarks found</h3>
+                    <p className="text-gray-600 mb-6">
+                      {searchQuery 
+                        ? `No bookmarks match "${searchQuery}". Try adjusting your search.`
+                        : 'Start building your bookmark library by adding your first bookmark.'
+                      }
+                    </p>
+                    <button
+                      onClick={() => setIsAddModalOpen(true)}
+                      className={`bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25 ${getAnimationClass()}`}
+                    >
+                      Add Your First Bookmark
+                    </button>
+                  </div>
+                ) : (
+                  <div className={
+                    viewMode === 'grid'
+                      ? `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${getDensityClass()}`
+                      : `space-y-4 ${settings.theme.density === 'compact' ? 'space-y-2' : settings.theme.density === 'spacious' ? 'space-y-6' : 'space-y-4'}`
+                  }>
+                    {bookmarks.map(bookmark => (
+                      <BookmarkCard
+                        key={bookmark.id}
+                        bookmark={bookmark}
+                        viewMode={viewMode}
+                        onToggleFavorite={toggleFavorite}
+                        onEdit={handleEditBookmark}
+                        onDelete={handleDeleteBookmark}
+                        onVisit={(bookmark) => {
+                          // Handle visit logic here
+                          window.open(bookmark.url, '_blank');
+                        }}
+                        cardBackgroundClass="bg-card hover:bg-card/80"
+                        showDescriptions={settings.showDescriptions}
+                        showVisitCount={settings.showVisitCount}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className={
-                viewMode === 'grid'
-                  ? `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${getDensityClass()}`
-                  : `space-y-4 ${settings.theme.density === 'compact' ? 'space-y-2' : settings.theme.density === 'spacious' ? 'space-y-6' : 'space-y-4'}`
-              }>
-                {bookmarks.map(bookmark => (
-                  <BookmarkCard
-                    key={bookmark.id}
-                    bookmark={bookmark}
-                    viewMode={viewMode}
-                    onToggleFavorite={toggleFavorite}
-                    onEdit={handleEditBookmark}
-                    onDelete={handleDeleteBookmark}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+            </>
+          ) : (
+            <MemoView
+              memos={memos}
+              categories={categoryNames}
+              onAddMemo={handleAddMemo}
+              onUpdateMemo={updateMemo}
+              onDeleteMemo={deleteMemo}
+              onToggleFavorite={toggleMemoFavorite}
+            />
+          )}
         </div>
       </div>
 
@@ -192,6 +263,7 @@ function App() {
           setEditingBookmark(undefined);
         }}
         onAdd={handleAddBookmark}
+        onAddMemo={handleAddMemo}
         categories={categoryNames}
         editingBookmark={editingBookmark}
       />
@@ -209,13 +281,36 @@ function App() {
         onUpdateSettings={updateSettings}
         onUpdateTheme={updateTheme}
         onResetSettings={resetSettings}
+        onDeleteAllData={() => {
+          if (window.confirm('Are you sure you want to delete all data? This action cannot be undone.')) {
+            // Handle delete all data logic
+            console.log('Delete all data');
+          }
+        }}
       />
 
       <ImportExportModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
         bookmarks={allBookmarks}
+        categories={categories}
+        settings={settings}
+        userPreferences={{
+          selectedCategory,
+          searchQuery,
+          viewMode,
+          sortBy
+        }}
+        memos={memos}
         onImportBookmarks={importBookmarks}
+        onImportMemos={importMemos}
+        onRestoreCompleteBackup={(backupData) => {
+          // Handle complete backup restoration
+          if (backupData.memos) {
+            importMemos(backupData.memos);
+          }
+          console.log('Restore complete backup', backupData);
+        }}
         mode="import"
       />
 
@@ -223,8 +318,33 @@ function App() {
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
         bookmarks={allBookmarks}
+        categories={categories}
+        settings={settings}
+        userPreferences={{
+          selectedCategory,
+          searchQuery,
+          viewMode,
+          sortBy
+        }}
+        memos={memos}
         onImportBookmarks={importBookmarks}
+        onImportMemos={importMemos}
+        onRestoreCompleteBackup={(backupData) => {
+          // Handle complete backup restoration
+          if (backupData.memos) {
+            importMemos(backupData.memos);
+          }
+          console.log('Restore complete backup', backupData);
+        }}
         mode="export"
+      />
+
+      <PasgenModal
+        isOpen={isPasgenModalOpen}
+        onClose={() => {
+          console.log('PasgenModal onClose called'); // Debug log
+          setIsPasgenModalOpen(false);
+        }}
       />
     </div>
   );

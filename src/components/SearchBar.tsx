@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Grid, List, SortDesc, ChevronDown } from 'lucide-react';
+import { Search, Grid, List, SortDesc, ChevronDown, Grid3X3 } from 'lucide-react';
 import type { SortOption } from '@/types/bookmark';
 
 interface SearchBarProps {
@@ -41,86 +41,80 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const currentSortOption = sortOptions.find(option => option.value === sortBy) || sortOptions[0];
 
   return (
-    <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200/50 p-6 sticky top-0 z-40">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex-1 min-w-[200px] max-w-2xl">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              placeholder="Search bookmarks, tags, or descriptions..."
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-white/80 border border-gray-200/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 transition-all duration-200"
-            />
-          </div>
+    <div className="modern-search bg-white/80 backdrop-blur-sm border-b border-gray-200/60 p-6">
+      <div className="flex items-center gap-4">
+        {/* Search Input */}
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            placeholder="Search bookmarks..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="modern-search-input"
+          />
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600 whitespace-nowrap flex items-center gap-1">
-              <SortDesc className="w-4 h-4" />
-              Sort by:
-            </span>
-            <div className="relative">
-              <select
-                value={sortBy}
-                onChange={(e) => onSortChange(e.target.value as SortOption)}
-                className="bg-white/80 border border-gray-200/50 rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all duration-200 appearance-none cursor-pointer min-w-[180px]"
-              >
-                {sortOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.icon} {option.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
-            </div>
-          </div>
-
-          <div className="flex items-center bg-gray-100 rounded-lg p-1">
-            <button
-              title="Grid View"
-              onClick={() => onViewModeChange('grid')}
-              className={`p-2 rounded-md transition-all duration-200 ${
-                viewMode === 'grid'
-                  ? 'bg-white text-blue-500 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <Grid className="w-4 h-4" />
-            </button>
-            <button
-              title="List View"
-              onClick={() => onViewModeChange('list')}
-              className={`p-2 rounded-md transition-all duration-200 ${
-                viewMode === 'list'
-                  ? 'bg-white text-blue-500 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
+        {/* View Mode Toggle */}
+        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => onViewModeChange('grid')}
+            className={`p-2 rounded-md transition-all duration-200 ${
+              viewMode === 'grid'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+            title="Grid view"
+          >
+            <Grid3X3 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onViewModeChange('list')}
+            className={`p-2 rounded-md transition-all duration-200 ${
+              viewMode === 'list'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+            title="List view"
+          >
+            <List className="w-4 h-4" />
+          </button>
         </div>
-      </div>
 
-      <div className="mt-4 flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">
-            {selectedCategory === 'All' ? 'All Bookmarks' : selectedCategory}
-          </h2>
-          <p className="text-sm text-gray-600">
-            {totalResults} bookmark{totalResults !== 1 ? 's' : ''} found
-            {sortBy !== 'dateAdded-desc' && (
-              <span className="ml-2 text-blue-600">
-                • Sorted by {currentSortOption.label}
-              </span>
-            )}
-          </p>
+        {/* Sort Dropdown */}
+        <div className="relative">
+          <select
+            value={sortBy}
+            onChange={(e) => onSortChange(e.target.value as any)}
+            className="modern-input appearance-none pr-8 cursor-pointer"
+          >
+            <option value="dateAdded-desc">Newest first</option>
+            <option value="dateAdded-asc">Oldest first</option>
+            <option value="title-asc">A-Z</option>
+            <option value="title-desc">Z-A</option>
+            <option value="visits-desc">Most visited</option>
+            <option value="visits-asc">Least visited</option>
+            <option value="favorites-first">Favorites first</option>
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        </div>
+
+        {/* Results Count */}
+        <div className="text-sm text-gray-500 font-medium">
+          {totalResults} {totalResults === 1 ? 'bookmark' : 'bookmarks'}
         </div>
       </div>
+
+      {/* Selected Category Display */}
+      {selectedCategory && selectedCategory !== 'All' && (
+        <div className="mt-4 flex items-center gap-2">
+          <span className="text-sm text-gray-500">In:</span>
+          <span className="px-3 py-1 bg-blue-50 text-blue-700 text-sm font-medium rounded-full border border-blue-200/50">
+            {selectedCategory}
+          </span>
+        </div>
+      )}
     </div>
   );
 };

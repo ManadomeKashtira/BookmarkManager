@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Palette, LayoutGrid, Zap, MonitorPlay, Save, RotateCcw, Trash2 as TrashIcon, Settings as SettingsIcon } from 'lucide-react'; // Added SettingsIcon
+import { X, Palette, LayoutGrid, Zap, MonitorPlay, Save, RotateCcw, Trash2 as TrashIcon, Settings as SettingsIcon } from 'lucide-react';
 import type { AppSettings, ThemeSettings } from '@/types/bookmark';
 
 interface SettingsModalProps {
@@ -343,6 +343,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
                 </div>
 
+
+
                 <div className="pt-6 border-t border-border">
                   <button
                     onClick={handleReset}
@@ -373,6 +375,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </button>
         </div>
       </div>
+      
     </div>
   );
 };

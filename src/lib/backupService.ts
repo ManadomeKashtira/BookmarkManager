@@ -1,4 +1,4 @@
-import type { Bookmark, Category, AppSettings, CompleteBackupData, BackupMetadata, SortOption } from '@/types/bookmark';
+import type { Bookmark, Category, AppSettings, CompleteBackupData, BackupMetadata, SortOption, Memo } from '@/types/bookmark';
 
 const BACKUP_FORMAT_VERSION = '1.0.0';
 const APP_VERSION = '1.0.0';
@@ -28,7 +28,8 @@ export function createCompleteBackup(
     searchQuery: string;
     viewMode: 'grid' | 'list';
     sortBy: SortOption;
-  }
+  },
+  memos?: Memo[]
 ): CompleteBackupData {
   const exportDate = new Date().toISOString();
   const exportTimestamp = Date.now();
@@ -36,6 +37,8 @@ export function createCompleteBackup(
   // Calculate statistics
   const totalVisits = bookmarks.reduce((sum, bookmark) => sum + (bookmark.visits || 0), 0);
   const favoriteCount = bookmarks.filter(bookmark => bookmark.isFavorite).length;
+  const memoCount = memos?.length || 0;
+  const favoriteMemos = memos?.filter(memo => memo.isFavorite).length || 0;
 
   // Calculate hierarchical folder statistics
   const hierarchicalCategories = categories.filter(cat => cat.fullPath && cat.fullPath.includes('/'));
@@ -47,7 +50,8 @@ export function createCompleteBackup(
     bookmarks,
     categories,
     settings,
-    userPreferences
+    userPreferences,
+    memos
   });
   
   const metadata: BackupMetadata = {
@@ -58,8 +62,9 @@ export function createCompleteBackup(
     appVersion: APP_VERSION,
     totalBookmarks: bookmarks.length,
     totalCategories: categories.length,
+    totalMemos: memoCount,
     checksum: generateChecksum(dataForChecksum),
-    description: `Complete backup with hierarchical folders created on ${new Date(exportDate).toLocaleString()}`,
+    description: `Complete backup with hierarchical folders and memos created on ${new Date(exportDate).toLocaleString()}`,
     hierarchicalStructure: {
       totalFolders: categories.length,
       rootFolders: rootCategories.length,
@@ -75,7 +80,7 @@ export function createCompleteBackup(
       ...bookmark,
       dateAdded: bookmark.dateAdded instanceof Date ? bookmark.dateAdded.toISOString() : bookmark.dateAdded,
       dateModified: bookmark.dateModified instanceof Date ? bookmark.dateModified.toISOString() : bookmark.dateModified,
-    })) as Bookmark[],
+    })) as any,
     categories: categories.map(category => ({
       ...category,
       // Ensure all hierarchical properties are preserved
@@ -85,11 +90,17 @@ export function createCompleteBackup(
       children: category.children || [],
       fullPath: category.fullPath || category.name
     })),
+    memos: memos?.map(memo => ({
+      ...memo,
+      createdAt: memo.createdAt instanceof Date ? memo.createdAt.toISOString() : memo.createdAt,
+      updatedAt: memo.updatedAt instanceof Date ? memo.updatedAt.toISOString() : memo.updatedAt,
+    })) as any || [],
     settings,
     userPreferences,
     statistics: {
       totalVisits,
       favoriteCount,
+      favoriteMemos,
       lastBackupDate: exportDate,
       hierarchicalInfo: {
         totalFolders: categories.length,
@@ -231,9 +242,16 @@ export function parseBackupFile(fileContent: string): {
       dateModified: new Date(bookmark.dateModified),
     }));
 
+    const processedMemos = backupData.memos?.map((memo: any) => ({
+      ...memo,
+      createdAt: new Date(memo.createdAt),
+      updatedAt: new Date(memo.updatedAt),
+    })) || [];
+
     const processedData: CompleteBackupData = {
       ...backupData,
-      bookmarks: processedBookmarks
+      bookmarks: processedBookmarks,
+      memos: processedMemos
     };
 
     return {

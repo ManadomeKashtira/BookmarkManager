@@ -12,10 +12,10 @@ import {
 
 // Sample data for demonstration if localStorage is empty
 const sampleBookmarks: Bookmark[] = [
-  { id: '1', title: 'React Docs', url: 'https://react.dev', description: 'Official React documentation.', favicon: 'Bookmark', category: 'Development', tags: ['react', 'js'], isFavorite: true, dateAdded: new Date('2024-07-15T10:00:00Z'), dateModified: new Date('2024-07-15T10:00:00Z'), visits: 25 },
-  { id: '2', title: 'Tailwind CSS', url: 'https://tailwindcss.com', description: 'Utility-first CSS framework.', favicon: 'Palette', category: 'Development', tags: ['css', 'tailwind'], isFavorite: true, dateAdded: new Date('2024-07-10T11:00:00Z'), dateModified: new Date('2024-07-10T11:00:00Z'), visits: 18 },
-  { id: '3', title: 'Next.js Docs', url: 'https://nextjs.org/docs', description: 'The React Framework for the Web.', favicon: 'Globe', category: 'Development', tags: ['nextjs', 'react'], isFavorite: false, dateAdded: new Date('2024-07-08T12:00:00Z'), dateModified: new Date('2024-07-08T12:00:00Z'), visits: 12 },
-  { id: '4', title: 'Lucide Icons', url: 'https://lucide.dev', description: 'Beautifully consistent open-source icons.', favicon: 'Star', category: 'Design', tags: ['icons', 'svg'], isFavorite: true, dateAdded: new Date('2024-07-05T09:00:00Z'), dateModified: new Date('2024-07-05T09:00:00Z'), visits: 30 },
+  { id: '1', title: 'Youtube', url: 'https://youtube.com', description: 'video sharing platform.', favicon: 'Bookmark', category: 'Development', tags: ['YT', 'entertaiment'], isFavorite: true, dateAdded: new Date('2024-07-15T10:00:00Z'), dateModified: new Date('2024-07-15T10:00:00Z'), visits: 25 },
+  { id: '2', title: 'Discord', url: 'https://discord.com/', description: 'Discord is a free voice and text chat client for gamers.', favicon: 'Palette', category: 'Development', tags: ['discord', 'MSG'], isFavorite: true, dateAdded: new Date('2024-07-10T11:00:00Z'), dateModified: new Date('2024-07-10T11:00:00Z'), visits: 18 },
+  { id: '3', title: 'Gmail', url: 'https://mail.google.com/mail/u/0/#inbox', description: 'Mail_services', favicon: 'Globe', category: 'Development', tags: ['gmail', 'messages'], isFavorite: false, dateAdded: new Date('2024-07-08T12:00:00Z'), dateModified: new Date('2024-07-08T12:00:00Z'), visits: 12 },
+  { id: '4', title: 'ChatGpt', url: 'https://chatgpt.com/', description: 'Chatgpt', favicon: 'Star', category: 'Design', tags: ['bot', 'Chatbot'], isFavorite: true, dateAdded: new Date('2024-07-05T09:00:00Z'), dateModified: new Date('2024-07-05T09:00:00Z'), visits: 30 },
   { id: '5', title: 'MDN Web Docs', url: 'https://developer.mozilla.org', description: 'Resources for developers, by developers.', favicon: 'FileText', category: 'Learning', tags: ['html', 'css', 'js', 'web'], isFavorite: false, dateAdded: new Date('2024-07-01T14:00:00Z'), dateModified: new Date('2024-07-01T14:00:00Z'), visits: 40 },
 ];
 

@@ -63,7 +63,7 @@ export const renderLucideIcon = (
   const className = props?.className || '';
 
   if (!iconName) {
-    return <DefaultIconComponent {...props} size={defaultSize} className={className} />;
+    return <DefaultIconComponent {...props} className={className} style={{ width: defaultSize, height: defaultSize }} />;
   }
 
   // Check for data URI or common image URL
@@ -97,15 +97,9 @@ export const renderLucideIcon = (
 
   const IconComponent = iconMap[iconName];
   if (IconComponent) {
-    return <IconComponent {...props} size={defaultSize} className={className} />;
+    return <IconComponent {...props} className={className} style={{ width: defaultSize, height: defaultSize }} />;
   }
 
-  // Fallback for Emojis (single or double character common emojis)
-  // Regex for common emojis (simplified)
-  if (iconName.length <= 2 && (/\p{Emoji}/u.test(iconName) || /\p{Extended_Pictographic}/u.test(iconName))) {
-     return <span className={className} style={{ fontSize: `${Number(defaultSize) * 0.8}px`, lineHeight: `${Number(defaultSize)}px`, display: 'inline-block', verticalAlign: 'middle' }}>{iconName}</span>;
-  }
-  
-  // If not an image, not a known Lucide icon, and not a simple emoji, fallback to default Lucide Icon
-  return <DefaultIconComponent {...props} size={defaultSize} className={className} />;
+  // If not an image and not a known Lucide icon, fallback to default Lucide Icon
+  return <DefaultIconComponent {...props} className={className} style={{ width: defaultSize, height: defaultSize }} />;
 };
