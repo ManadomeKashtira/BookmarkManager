@@ -1,8 +1,10 @@
 
-import React, { useState } from 'react';
-import { Heart, ExternalLink, Edit, Trash2, Eye, Bookmark as BookmarkIcon, Clock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Heart, ExternalLink, Edit, Trash2, Eye, Clock, CheckCircle, AlertTriangle, Activity } from 'lucide-react';
+import { CustomIcon } from '@/lib/customIcons';
 import type { Bookmark } from '@/types/bookmark';
-import { renderLucideIcon } from '@/lib/icons';
+import { LinkHealthStatus } from '@/types/healthCheck';
+import { healthCheckService } from '@/services/healthCheckService';
 
 interface BookmarkCardProps {
   bookmark: Bookmark;
@@ -14,6 +16,7 @@ interface BookmarkCardProps {
   cardBackgroundClass: string;
   showDescriptions: boolean;
   showVisitCount: boolean;
+  showHealthStatus?: boolean;
 }
 
 export const BookmarkCard: React.FC<BookmarkCardProps> = ({
@@ -25,9 +28,18 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
   onVisit,
   cardBackgroundClass,
   showDescriptions,
-  showVisitCount
+  showVisitCount,
+  showHealthStatus = true
 }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [healthStatus, setHealthStatus] = useState<LinkHealthStatus | null>(null);
+
+  useEffect(() => {
+    if (showHealthStatus) {
+      const status = healthCheckService.getHealthStatus(bookmark.id);
+      setHealthStatus(status);
+    }
+  }, [bookmark.id, showHealthStatus]);
 
   const formatDate = (dateInput: Date | string) => {
     const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
@@ -41,10 +53,59 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
     }).format(date);
   };
 
-  const faviconDisplay = renderLucideIcon(bookmark.favicon, {
-    className: 'flex-shrink-0 text-foreground',
-    size: viewMode === 'list' ? 24 : 32
-  });
+  const getHealthStatusIndicator = () => {
+    if (!showHealthStatus || !healthStatus) return null;
+
+    const getStatusIcon = () => {
+      switch (healthStatus.status) {
+        case 'healthy':
+          return <CheckCircle className="w-3 h-3 text-green-500" />;
+        case 'broken':
+          return <AlertTriangle className="w-3 h-3 text-red-500" />;
+        case 'warning':
+          return <AlertTriangle className="w-3 h-3 text-yellow-500" />;
+        case 'checking':
+          return <Activity className="w-3 h-3 text-blue-500 animate-pulse" />;
+        default:
+          return null;
+      }
+    };
+
+    const getStatusTitle = () => {
+      switch (healthStatus.status) {
+        case 'healthy':
+          return `Link is healthy (${healthStatus.statusCode})`;
+        case 'broken':
+          return `Link is broken (${healthStatus.statusCode || 'Error'})`;
+        case 'warning':
+          return `Link has warnings (${healthStatus.statusCode})`;
+        case 'checking':
+          return 'Checking link health...';
+        default:
+          return 'Health status unknown';
+      }
+    };
+
+    return (
+      <div className="flex items-center" title={getStatusTitle()}>
+        {getStatusIcon()}
+      </div>
+    );
+  };
+
+  const faviconDisplay = bookmark.favicon ? (
+    <CustomIcon 
+      name={bookmark.favicon as any} 
+      size={viewMode === 'list' ? 24 : 32}
+      className="flex-shrink-0 text-foreground"
+    />
+  ) : (
+    <CustomIcon 
+      name="folder1484" 
+      size={viewMode === 'list' ? 24 : 32}
+      className="flex-shrink-0 text-foreground"
+    />
+  );
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, bookmarkId: string) => {
     e.dataTransfer.setData('bookmarkId', bookmarkId);
@@ -76,6 +137,7 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
               {bookmark.isFavorite && (
                 <Heart className="w-4 h-4 text-red-500 fill-current flex-shrink-0" />
               )}
+              {getHealthStatusIndicator()}
             </div>
             {showDescriptions && bookmark.description && (
                 <p className="text-sm text-muted-foreground truncate mb-2">{bookmark.description}</p>
@@ -159,29 +221,22 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
       <div className="flex items-start gap-4 mb-4">
         {/* Favicon */}
         <div className="flex-shrink-0">
-          {bookmark.favicon ? (
-            <img
-              src={bookmark.favicon}
-              alt=""
-              className="w-12 h-12 rounded-lg object-cover border border-gray-200/60"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-              }}
-            />
-          ) : (
-            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border border-gray-200/60">
-              <BookmarkIcon className="w-6 h-6 text-gray-400" />
-            </div>
-          )}
+          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border border-gray-200/60">
+            {faviconDisplay}
+          </div>
         </div>
 
         {/* Title and Actions */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="text-lg font-semibold text-gray-900 leading-tight line-clamp-2">
-              {bookmark.title}
-            </h3>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-lg font-semibold text-gray-900 leading-tight line-clamp-2">
+                  {bookmark.title}
+                </h3>
+                {getHealthStatusIndicator()}
+              </div>
+            </div>
             <div className="flex items-center gap-1 flex-shrink-0">
               <button
                 onClick={() => onToggleFavorite(bookmark.id)}

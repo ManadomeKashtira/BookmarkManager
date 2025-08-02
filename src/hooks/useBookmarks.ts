@@ -9,6 +9,7 @@ import {
   getVisibleCategories,
   ensureParentCategories
 } from '@/lib/categoryTreeUtils';
+import { healthCheckService } from '@/services/healthCheckService';
 
 // Sample data for demonstration if localStorage is empty
 const sampleBookmarks: Bookmark[] = [
@@ -40,6 +41,7 @@ export const useBookmarks = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<SortOption>('dateAdded-desc');
+  const [healthFilter, setHealthFilter] = useState<'all' | 'healthy' | 'broken' | 'warning'>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -152,6 +154,15 @@ export const useBookmarks = () => {
       );
     }
 
+    // Health status filtering
+    if (healthFilter !== 'all') {
+      filtered = filtered.filter(bookmark => {
+        const healthStatus = healthCheckService.getHealthStatus(bookmark.id);
+        if (!healthStatus) return healthFilter === 'unknown';
+        return healthStatus.status === healthFilter;
+      });
+    }
+
     return filtered.sort((a, b) => {
       switch (sortBy) {
         case 'title-asc':
@@ -183,7 +194,7 @@ export const useBookmarks = () => {
           return new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime();
       }
     });
-  }, [rawBookmarks, selectedCategory, searchQuery, sortBy]);
+  }, [rawBookmarks, selectedCategory, searchQuery, sortBy, healthFilter]);
 
   const stats: BookmarkStats = useMemo(() => {
     const totalVisits = rawBookmarks.reduce((sum, b) => sum + (b.visits || 0), 0);
@@ -368,6 +379,15 @@ export const useBookmarks = () => {
     }
   }, [selectedCategory, setSelectedCategory]);
 
+  const updateCategoryIcon = useCallback((categoryPath: string, iconName: string) => {
+    setCategories(prev => prev.map(cat => {
+      if (cat.name === categoryPath || cat.fullPath === categoryPath) {
+        return { ...cat, icon: iconName };
+      }
+      return cat;
+    }));
+  }, []);
+
   const restoreCompleteBackup = useCallback((backupData: CompleteBackupData) => {
     console.log('Restoring complete backup:', backupData.metadata);
 
@@ -455,6 +475,8 @@ export const useBookmarks = () => {
     setViewMode,
     sortBy,
     setSortBy,
+    healthFilter,
+    setHealthFilter,
     isLoading,
     stats,
     addBookmark,
@@ -470,6 +492,7 @@ export const useBookmarks = () => {
     deleteBookmarksByCategory,
     renameCategory,
     deleteCategory,
+    updateCategoryIcon,
     restoreCompleteBackup,
     toggleCategoryExpansion: toggleCategoryExpansionState,
   };

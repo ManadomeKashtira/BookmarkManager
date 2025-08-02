@@ -1,18 +1,31 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { X, Link as LinkIconLucide, Tag as TagIconLucide, Folder as FolderIconLucide, Bookmark as BookmarkIcon, FileText } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { X, FileText, AlertTriangle } from 'lucide-react';
+import { 
+  CustomIcon, 
+  FolderIcon, 
+  SettingsIcon,
+  GearIcon,
+  type CustomIconName
+} from '@/lib/customIcons';
 import type { Bookmark, Memo, MemoContent } from '@/types/bookmark';
-import { selectableIcons, defaultFaviconName } from '@/lib/icons';
 import { RichTextEditor } from './RichTextEditor';
+import { IconSelectorModal } from './IconSelectorModal';
+import { DuplicateWarningModal } from './DuplicateWarningModal';
+import { useDuplicateDetection } from '@/hooks/useDuplicateDetection';
+import { DuplicateBookmark, MergeOptions } from '@/types/duplicateDetection';
 
 interface AddBookmarkModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (bookmark: Omit<Bookmark, 'id' | 'dateAdded' | 'dateModified' | 'visits'>) => void;
   onAddMemo?: (memo: Omit<Memo, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onUpdateBookmark?: (id: string, updates: Partial<Bookmark>) => void;
+  onDeleteBookmark?: (id: string) => void;
   categories: string[];
   editingBookmark?: Bookmark;
   initialCategory?: string | null;
+  allBookmarks: Bookmark[];
 }
 
 const initialFormState = {
@@ -23,7 +36,7 @@ const initialFormState = {
   category: 'Uncategorized',
   tags: '',
   isFavorite: false,
-  favicon: defaultFaviconName
+  favicon: 'folder'
 };
 
 const initialMemoState = {
@@ -41,14 +54,34 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
   onClose,
   onAdd,
   onAddMemo,
+  onUpdateBookmark,
+  onDeleteBookmark,
   categories,
   editingBookmark,
-  initialCategory
+  initialCategory,
+  allBookmarks
 }) => {
   const [formData, setFormData] = useState(initialFormState);
   const [memoData, setMemoData] = useState(initialMemoState);
   const [activeTab, setActiveTab] = useState<'bookmark' | 'memo'>('bookmark');
+  const [showIconSelector, setShowIconSelector] = useState(false);
+  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
+  const [pendingBookmark, setPendingBookmark] = useState<Omit<Bookmark, 'id' | 'dateAdded' | 'dateModified' | 'visits'> | null>(null);
+  const [detectedDuplicates, setDetectedDuplicates] = useState<DuplicateBookmark[]>([]);
+  const [realTimeDuplicates, setRealTimeDuplicates] = useState<DuplicateBookmark[]>([]);
   const prevIsOpenRef = useRef(isOpen);
+
+  // Initialize duplicate detection hook
+  const {
+    checkForDuplicates,
+    checkUrlInRealTime,
+    mergeWithExisting,
+    getDefaultMergeOptions
+  } = useDuplicateDetection({
+    bookmarks: allBookmarks,
+    onUpdateBookmark,
+    onDeleteBookmark
+  });
 
   useEffect(() => {
     const isOpening = isOpen && !prevIsOpenRef.current;
@@ -63,7 +96,7 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
           category: editingBookmark.category || (categories.length > 0 ? categories[0] : 'Uncategorized'),
           tags: editingBookmark.tags.join(', ') || '',
           isFavorite: editingBookmark.isFavorite || false,
-          favicon: editingBookmark.favicon || defaultFaviconName,
+          favicon: editingBookmark.favicon || 'folder',
         });
       } else {
         // New bookmark: use initialCategory if provided, otherwise default from existing categories or 'Uncategorized'
@@ -72,13 +105,69 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
           ...initialFormState,
           id: undefined, // Explicitly undefined for new
           category: initialCategory || defaultCat,
-          favicon: defaultFaviconName,
+          favicon: 'folder',
         });
       }
+      
+      // Reset duplicate detection state
+      setRealTimeDuplicates([]);
+      setDetectedDuplicates([]);
+      setPendingBookmark(null);
+      setShowDuplicateWarning(false);
     }
     prevIsOpenRef.current = isOpen;
   }, [isOpen, editingBookmark, initialCategory, categories]);
 
+
+  const handleIconSelect = (iconName: CustomIconName) => {
+    setFormData({ ...formData, favicon: iconName });
+    setShowIconSelector(false);
+  };
+
+  // Real-time duplicate checking for URL field
+  const handleUrlChange = useCallback((url: string) => {
+    setFormData(prev => ({ ...prev, url }));
+    
+    // Check for duplicates in real-time (debounced)
+    const timeoutId = setTimeout(() => {
+      if (url && url.length > 10 && !editingBookmark) {
+        const duplicates = checkUrlInRealTime(url);
+        setRealTimeDuplicates(duplicates);
+      } else {
+        setRealTimeDuplicates([]);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [checkUrlInRealTime, editingBookmark]);
+
+  // Handle duplicate warning actions
+  const handleDuplicateProceed = useCallback(() => {
+    if (pendingBookmark) {
+      onAdd(pendingBookmark);
+      setPendingBookmark(null);
+      setDetectedDuplicates([]);
+      setShowDuplicateWarning(false);
+      onClose();
+    }
+  }, [pendingBookmark, onAdd, onClose]);
+
+  const handleDuplicateMerge = useCallback((duplicateId: string, mergeOptions: MergeOptions) => {
+    if (pendingBookmark) {
+      mergeWithExisting(pendingBookmark, duplicateId, mergeOptions);
+      setPendingBookmark(null);
+      setDetectedDuplicates([]);
+      setShowDuplicateWarning(false);
+      onClose();
+    }
+  }, [pendingBookmark, mergeWithExisting, onClose]);
+
+  const handleDuplicateCancel = useCallback(() => {
+    setPendingBookmark(null);
+    setDetectedDuplicates([]);
+    setShowDuplicateWarning(false);
+    // Don't close the modal, return to form
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,7 +184,26 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
         isFavorite: formData.isFavorite,
         favicon: formData.favicon
       };
-      onAdd(bookmarkPayload);
+
+      // If editing existing bookmark, just update it
+      if (editingBookmark) {
+        onAdd(bookmarkPayload);
+        return;
+      }
+
+      // Check for duplicates before adding new bookmark
+      const duplicates = checkForDuplicates(bookmarkPayload);
+      
+      if (duplicates.length > 0) {
+        // Show duplicate warning modal
+        setPendingBookmark(bookmarkPayload);
+        setDetectedDuplicates(duplicates);
+        setShowDuplicateWarning(true);
+      } else {
+        // No duplicates, add directly
+        onAdd(bookmarkPayload);
+        onClose();
+      }
     } else if (activeTab === 'memo' && onAddMemo) {
       if (!memoData.title.trim()) return;
 
@@ -109,6 +217,7 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
         category: memoData.category || 'Uncategorized'
       };
       onAddMemo(memoPayload);
+      onClose();
     }
   };
 
@@ -122,7 +231,7 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
             <h2 className="text-2xl font-bold text-foreground flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
                 {activeTab === 'bookmark' ? (
-                  <LinkIconLucide className="w-5 h-5 text-primary-foreground" />
+                  <CustomIcon name="folder1484" size={20} className="text-primary-foreground" />
                 ) : (
                   <FileText className="w-5 h-5 text-primary-foreground" />
                 )}
@@ -148,7 +257,7 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
               }`}
             >
-              <LinkIconLucide className="w-4 h-4" />
+              <CustomIcon name="folder1484" size={16} />
               Bookmark
             </button>
             <button
@@ -171,17 +280,52 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  <LinkIconLucide className="w-4 h-4 inline mr-2" />
+                  <CustomIcon name="mail142" size={16} className="inline mr-2" />
                   URL *
                 </label>
-                <input
-                  type="url"
-                  value={formData.url}
-                  onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                  placeholder="https://example.com"
-                  className="w-full px-4 py-3 bg-background border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="url"
+                    value={formData.url}
+                    onChange={(e) => handleUrlChange(e.target.value)}
+                    placeholder="https://example.com"
+                    className={`w-full px-4 py-3 bg-background border rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 ${
+                      realTimeDuplicates.length > 0 && !editingBookmark
+                        ? 'border-yellow-500 pr-10'
+                        : 'border-input'
+                    }`}
+                    required
+                  />
+                  {realTimeDuplicates.length > 0 && !editingBookmark && (
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                    </div>
+                  )}
+                </div>
+                {realTimeDuplicates.length > 0 && !editingBookmark && (
+                  <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-yellow-800 text-sm font-medium mb-2">
+                      <AlertTriangle className="w-4 h-4" />
+                      Similar bookmark{realTimeDuplicates.length > 1 ? 's' : ''} found
+                    </div>
+                    <div className="space-y-2">
+                      {realTimeDuplicates.slice(0, 2).map((duplicate) => (
+                        <div key={duplicate.id} className="text-sm text-yellow-700">
+                          <div className="font-medium truncate">{duplicate.title}</div>
+                          <div className="text-xs text-yellow-600 truncate">{duplicate.url}</div>
+                        </div>
+                      ))}
+                      {realTimeDuplicates.length > 2 && (
+                        <div className="text-xs text-yellow-600">
+                          +{realTimeDuplicates.length - 2} more similar bookmark{realTimeDuplicates.length - 2 > 1 ? 's' : ''}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-xs text-yellow-600 mt-2">
+                      You'll be able to merge or keep both when you submit.
+                    </div>
+                  </div>
+                )}
               </div>
 
             <div className="md:col-span-2">
@@ -213,7 +357,7 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                <FolderIconLucide className="w-4 h-4 inline mr-2" />
+                <CustomIcon name="folder1484" size={16} className="inline mr-2" />
                 Category
               </label>
               <div className="relative">
@@ -250,16 +394,47 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
             </div>
             
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-foreground mb-2">
-                 <BookmarkIcon className="w-4 h-4 inline mr-2" />
-                Icon / Favicon
+                            <label className="block text-sm font-medium text-foreground mb-2 flex items-center justify-between">
+                <span className="flex items-center">
+                  <CustomIcon name="folder1484" size={16} className="inline mr-2" />
+                  Icon / Favicon
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowIconSelector(true)}
+                  className="text-sm text-primary hover:text-primary/80 underline"
+                >
+                  Browse All Icons
+                </button>
               </label>
               <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2 p-3 border border-input rounded-xl bg-background max-h-48 overflow-y-auto">
-                {selectableIcons.map(({ name, IconComponent }) => (
+                {[
+                  { name: 'folder1484', icon: () => <CustomIcon name="folder1484" size={24} />, label: 'Folder' },
+                  { name: 'user3296', icon: () => <CustomIcon name="user3296" size={24} />, label: 'User' },
+                  { name: 'mail142', icon: () => <CustomIcon name="mail142" size={24} />, label: 'Mail' },
+                  { name: 'videoSolidFull', icon: () => <CustomIcon name="videoSolidFull" size={24} />, label: 'Video' },
+                  { name: 'movie850', icon: () => <CustomIcon name="movie850" size={24} />, label: 'Movie' },
+                  { name: 'newspaperSolidFull', icon: () => <CustomIcon name="newspaperSolidFull" size={24} />, label: 'Newspaper' },
+                  { name: 'chart671', icon: () => <CustomIcon name="chart671" size={24} />, label: 'Chart' },
+                  { name: 'settings778', icon: () => <CustomIcon name="settings778" size={24} />, label: 'Settings' },
+                  { name: 'gear1213', icon: () => <CustomIcon name="gear1213" size={24} />, label: 'Gear' },
+                  { name: 'youtubeShortsLogo15250', icon: () => <CustomIcon name="youtubeShortsLogo15250" size={24} />, label: 'YouTube Shorts' },
+                  { name: 'facebookMessenger2881', icon: () => <CustomIcon name="facebookMessenger2881" size={24} />, label: 'Facebook Messenger' },
+                  { name: 'twitterXLogoBlackRound20851', icon: () => <CustomIcon name="twitterXLogoBlackRound20851" size={24} />, label: 'Twitter X' },
+                  { name: 'instagramLogo8869', icon: () => <CustomIcon name="instagramLogo8869" size={24} />, label: 'Instagram' },
+                  { name: 'linkedinLogo2430', icon: () => <CustomIcon name="linkedinLogo2430" size={24} />, label: 'LinkedIn' },
+                  { name: 'redditLogo2436', icon: () => <CustomIcon name="redditLogo2436" size={24} />, label: 'Reddit' },
+                  { name: 'whatsappLogo4456', icon: () => <CustomIcon name="whatsappLogo4456" size={24} />, label: 'WhatsApp' },
+                  { name: 'euroCoin2141', icon: () => <CustomIcon name="euroCoin2141" size={24} />, label: 'Euro Coin' },
+                  { name: 'bagShoppingSolidFull', icon: () => <CustomIcon name="bagShoppingSolidFull" size={24} />, label: 'Shopping Bag' },
+                  { name: 'umbrellaSolidFull', icon: () => <CustomIcon name="umbrellaSolidFull" size={24} />, label: 'Umbrella' },
+                  { name: 'subscribe852', icon: () => <CustomIcon name="subscribe852" size={24} />, label: 'Subscribe' },
+                  { name: 'userSecretSolidFull', icon: () => <CustomIcon name="userSecretSolidFull" size={24} />, label: 'User Secret' },
+                ].map(({ name, icon: IconComponent, label }) => (
                   <button
                     type="button"
                     key={name}
-                    title={name}
+                    title={label}
                     onClick={() => setFormData({ ...formData, favicon: name })}
                     className={`p-2 rounded-lg flex items-center justify-center transition-all duration-150 ease-in-out aspect-square
                       ${formData.favicon === name
@@ -267,7 +442,7 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
                         : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                       }`}
                   >
-                    <IconComponent className="w-6 h-6" />
+                    <IconComponent />
                   </button>
                 ))}
               </div>
@@ -276,7 +451,7 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-foreground mb-2">
-                <TagIconLucide className="w-4 h-4 inline mr-2" />
+                <CustomIcon name="user3296" size={16} className="inline mr-2" />
                 Tags (comma-separated)
               </label>
               <input
@@ -334,7 +509,7 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  <FolderIconLucide className="w-4 h-4 inline mr-2" />
+                  <CustomIcon name="folder1484" size={16} className="inline mr-2" />
                   Category
                 </label>
                 <select
@@ -352,7 +527,7 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  <TagIconLucide className="w-4 h-4 inline mr-2" />
+                  <CustomIcon name="user3296" size={16} className="inline mr-2" />
                   Tags (comma-separated)
                 </label>
                 <input
@@ -398,6 +573,27 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
           </div>
         </form>
       </div>
+
+      {/* Icon Selector Modal */}
+      <IconSelectorModal
+        isOpen={showIconSelector}
+        onClose={() => setShowIconSelector(false)}
+        onSelectIcon={handleIconSelect}
+        currentIcon={formData.favicon}
+      />
+
+      {/* Duplicate Warning Modal */}
+      {pendingBookmark && (
+        <DuplicateWarningModal
+          isOpen={showDuplicateWarning}
+          onClose={() => setShowDuplicateWarning(false)}
+          newBookmark={pendingBookmark}
+          duplicates={detectedDuplicates}
+          onProceed={handleDuplicateProceed}
+          onMerge={handleDuplicateMerge}
+          onCancel={handleDuplicateCancel}
+        />
+      )}
     </div>
   );
 };

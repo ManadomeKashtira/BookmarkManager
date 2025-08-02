@@ -1,25 +1,29 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  Bookmark as BookmarkIconLucide,
   Heart,
   Clock,
-  FolderOpen,
   Plus,
-  BarChart3,
-  Settings,
-  Download,
-  Upload,
   BookOpen,
   Trash2 as TrashIcon,
-  FolderPlus,
   Edit,
   ChevronRight,
   ChevronDown,
-  Folder,
   Shield,
-  FileText
+  FileText,
+  Activity
 } from 'lucide-react';
+import { 
+  CustomIcon, 
+  FolderIcon, 
+  SettingsIcon, 
+  ChartIcon,
+  UserIcon,
+  MailIcon,
+  VideoIcon,
+  MovieIcon,
+  NewspaperIcon
+} from '@/lib/customIcons';
 import type { Category, BookmarkStats } from '@/types/bookmark';
 import { TreeCategoryItem } from './TreeCategoryItem';
 
@@ -38,11 +42,14 @@ interface SidebarProps {
   onShowImport: () => void;
   onShowExport: () => void;
   onShowPasgen: () => void;
+  onShowHealthCheck: () => void;
+  onShowDuplicateManagement: () => void;
   onUpdateBookmarkCategory: (bookmarkId: string, newCategoryName: string) => void;
   onRequestDeleteCategoryContents: (categoryName: string) => void;
   onRequestCreateNewFolder: () => void;
   onRenameCategory: (oldCategoryName: string, newCategoryName: string) => void;
   onDeleteCategory: (categoryName: string) => void;
+  onUpdateCategoryIcon: (categoryPath: string, iconName: string) => void;
   onToggleCategoryExpansion: (categoryPath: string) => void;
   onAddCategoryWithPath: (categoryPath: string, options?: { autoRename?: boolean }) => any;
   autoRenameFolderPath?: string | null;
@@ -66,11 +73,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onShowImport,
   onShowExport,
   onShowPasgen,
+  onShowHealthCheck,
+  onShowDuplicateManagement,
   onUpdateBookmarkCategory,
   onRequestDeleteCategoryContents,
   onRequestCreateNewFolder,
   onRenameCategory,
   onDeleteCategory,
+  onUpdateCategoryIcon,
   onToggleCategoryExpansion,
   onAddCategoryWithPath,
   autoRenameFolderPath,
@@ -262,6 +272,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onRenameCategory(oldPath, newPath);
         }}
         onDelete={onDeleteCategory}
+        onUpdateIcon={onUpdateCategoryIcon}
         onCreateSubfolder={handleCreateSubfolder}
         autoRename={autoRenameFolderPath === (category.fullPath || category.name)}
         onAutoRenameComplete={onAutoRenameComplete}
@@ -335,7 +346,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
             {currentView === 'bookmarks' ? (
-              <BookmarkIconLucide className="w-6 h-6 text-white" />
+              <CustomIcon name="folder1484" size={24} className="text-white" />
             ) : (
               <FileText className="w-6 h-6 text-white" />
             )}
@@ -361,7 +372,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <BookmarkIconLucide className="w-4 h-4 inline mr-2" />
+              <CustomIcon name="folder1484" size={16} className="inline mr-2" />
               Bookmarks
             </button>
             <button
@@ -393,7 +404,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={onRequestCreateNewFolder}
                 className="modern-btn modern-btn-secondary w-full"
               >
-                <FolderPlus className="w-4 h-4" />
+                <CustomIcon name="folder1484" size={16} />
                 Create Folder
               </button>
             </>
@@ -413,6 +424,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Shield className="w-4 h-4" />
             Pasgen
           </button>
+          {currentView === 'bookmarks' && (
+            <>
+              <button
+                onClick={() => {
+                  alert('🔍 Starting Health Check...\n\nThis will check the status of all your bookmarked links. This process may take a few minutes depending on the number of bookmarks.');
+                  onShowHealthCheck();
+                }}
+                className="modern-btn w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 hover:shadow-lg hover:shadow-green-500/25"
+              >
+                <Activity className="w-4 h-4" />
+                Health Check
+              </button>
+              <button
+                onClick={() => {
+                  alert('🔍 Starting Duplicate Detection...\n\nThis will scan all your bookmarks to find duplicates based on URLs and titles. This process may take a moment depending on the number of bookmarks.');
+                  onShowDuplicateManagement();
+                }}
+                className="modern-btn w-full bg-gradient-to-r from-orange-500 to-red-600 text-white hover:from-orange-600 hover:to-red-700 hover:shadow-lg hover:shadow-orange-500/25"
+              >
+                <CustomIcon name="gear1213" size={16} />
+                Manage Duplicates
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -443,7 +478,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {currentView === 'bookmarks' && (
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-4">
-            <FolderOpen className="w-4 h-4 text-gray-500" />
+            <CustomIcon name="folder1484" size={16} className="text-gray-500" />
             <h3 className="font-semibold text-gray-800 text-sm">Categories</h3>
           </div>
 
@@ -507,28 +542,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={onShowAnalytics}
             className="modern-sidebar-item w-full"
           >
-            <BarChart3 className="w-4 h-4" />
+            <ChartIcon size={16} />
             <span className="flex-1 text-left">Analytics</span>
           </button>
           <button
             onClick={onShowImport}
             className="modern-sidebar-item w-full"
           >
-            <Upload className="w-4 h-4" />
+            <CustomIcon name="mail142" size={16} />
             <span className="flex-1 text-left">Import</span>
           </button>
           <button
             onClick={onShowExport}
             className="modern-sidebar-item w-full"
           >
-            <Download className="w-4 h-4" />
+            <CustomIcon name="mail142" size={16} />
             <span className="flex-1 text-left">Export</span>
           </button>
           <button
             onClick={onShowSettings}
             className="modern-sidebar-item w-full"
           >
-            <Settings className="w-4 h-4" />
+            <SettingsIcon size={16} />
             <span className="flex-1 text-left">Settings</span>
           </button>
         </div>
@@ -545,7 +580,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={handleCreateNewFolderFromContextMenu}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
               >
-                <FolderPlus className="w-4 h-4" />
+                <CustomIcon name="folder1484" size={16} />
                 Create New Folder
               </button>
             ) : (
@@ -557,7 +592,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={handleCreateNewFolderFromContextMenu} // Technically contextMenu.categoryName is the parent here
                   className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
                 >
-                  <FolderPlus className="w-4 h-4" />
+                  <CustomIcon name="folder1484" size={16} />
                   Create Subfolder
                 </button>
                 <button

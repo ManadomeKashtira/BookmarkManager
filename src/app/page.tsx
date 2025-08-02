@@ -13,6 +13,8 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { ConfirmationModal } from '@/components/ConfirmationModal';
 import { PasgenModal } from '@/components/PasgenModal';
 import { MemoView } from '@/components/MemoView';
+import { HealthCheckModal } from '@/components/HealthCheckModal';
+import { DuplicateManagementModal } from '@/components/DuplicateManagementModal';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { useSettings } from '@/hooks/useSettings';
 import { useAnalytics } from '@/hooks/useAnalytics';
@@ -88,6 +90,10 @@ export default function HomePage() {
   const [autoRenameFolderPath, setAutoRenameFolderPath] = useState<string | null>(null);
 
   const [categoryForNewBookmark, setCategoryForNewBookmark] = useState<string | null>(null);
+  
+  // Health check and duplicate management modal states
+  const [isHealthCheckModalOpen, setIsHealthCheckModalOpen] = useState(false);
+  const [isDuplicateManagementModalOpen, setIsDuplicateManagementModalOpen] = useState(false);
 
   const categoryNamesForModal = useMemo(() => categories.map(cat => cat.name), [categories]);
 
@@ -178,6 +184,28 @@ export default function HomePage() {
     }
   };
 
+  const handleUpdateCategoryIcon = (categoryPath: string, iconName: string) => {
+    // Find the category by path and update its icon
+    const updateCategoryIcon = (categories: any[], path: string, icon: string): any[] => {
+      return categories.map(cat => {
+        if (cat.fullPath === path || cat.name === path) {
+          return { ...cat, icon };
+        }
+        if (cat.children) {
+          return { ...cat, children: updateCategoryIcon(cat.children, path, icon) };
+        }
+        return cat;
+      });
+    };
+
+    // Update the categories in localStorage
+    const updatedCategories = updateCategoryIcon(categories, categoryPath, iconName);
+    localStorage.setItem('bookmarkCategories', JSON.stringify(updatedCategories));
+    
+    // Force a re-render by updating the state
+    window.dispatchEvent(new Event('storage'));
+  };
+
   const getAnimationClass = () => {
     switch (settings.theme.animation) {
       case 'none': return '';
@@ -235,11 +263,14 @@ export default function HomePage() {
           onShowPasgen={() => {
             setIsPasgenModalOpen(true);
           }}
+          onShowHealthCheck={() => setIsHealthCheckModalOpen(true)}
+          onShowDuplicateManagement={() => setIsDuplicateManagementModalOpen(true)}
           onUpdateBookmarkCategory={updateBookmarkCategory}
           onRequestDeleteCategoryContents={handleRequestDeleteCategoryContents}
           onRequestCreateNewFolder={handleRequestCreateNewFolder}
           onRenameCategory={handleRenameCategory}
           onDeleteCategory={handleDeleteCategory}
+          onUpdateCategoryIcon={handleUpdateCategoryIcon}
           onToggleCategoryExpansion={toggleCategoryExpansion}
           onAddCategoryWithPath={addCategoryWithPath}
           autoRenameFolderPath={autoRenameFolderPath}
@@ -445,11 +476,53 @@ export default function HomePage() {
         isLoading={isLoadingCategoryDelete}
       />
 
+      <ConfirmationModal
+        isOpen={isCreateFolderConfirmationModalOpen}
+        onClose={() => {
+          setIsCreateFolderConfirmationModalOpen(false);
+          setNewFolderNameForConfirmation(null);
+        }}
+        onConfirm={handleConfirmCreateFolder}
+        title="Create New Folder"
+        message={
+          <div className="space-y-4">
+            <p>Enter a name for the new folder:</p>
+            <input
+              type="text"
+              value={newFolderNameForConfirmation || ''}
+              onChange={(e) => setNewFolderNameForConfirmation(e.target.value)}
+              placeholder="New Folder"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              autoFocus
+            />
+          </div>
+        }
+        confirmText="Create Folder"
+        isDestructive={false}
+        isLoading={false}
+      />
+
       <PasgenModal
         isOpen={isPasgenModalOpen}
         onClose={() => {
           setIsPasgenModalOpen(false);
         }}
+      />
+
+      <HealthCheckModal
+        isOpen={isHealthCheckModalOpen}
+        onClose={() => setIsHealthCheckModalOpen(false)}
+        bookmarks={allBookmarks}
+        onUpdateBookmark={updateBookmark}
+        onDeleteBookmark={deleteBookmark}
+      />
+
+      <DuplicateManagementModal
+        isOpen={isDuplicateManagementModalOpen}
+        onClose={() => setIsDuplicateManagementModalOpen(false)}
+        bookmarks={allBookmarks}
+        onUpdateBookmark={updateBookmark}
+        onDeleteBookmark={deleteBookmark}
       />
     </div>
   );

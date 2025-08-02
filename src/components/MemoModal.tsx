@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Save, Star, Tag, Folder, Grid, FileText, Palette, Image } from 'lucide-react';
+import { X, Save, Star, Grid, FileText } from 'lucide-react';
+import { 
+  CustomIcon, 
+  FolderIcon, 
+  UserIcon, 
+  SettingsIcon 
+} from '@/lib/customIcons';
 import type { Memo, MemoContent } from '@/types/bookmark';
 import { RichTextEditor } from './RichTextEditor';
 
@@ -156,7 +162,7 @@ export const MemoModal: React.FC<MemoModalProps> = ({
               {/* Background Settings */}
               <div className="bg-muted/50 rounded-xl p-4">
                 <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <Image className="w-4 h-4" />
+                  <CustomIcon name="settings" size={16} />
                   Background
                 </h3>
                 
@@ -210,7 +216,7 @@ export const MemoModal: React.FC<MemoModalProps> = ({
               {/* Category */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  <Folder className="w-4 h-4 inline mr-2" />
+                  <CustomIcon name="folder1484" size={16} className="inline mr-2" />
                   Category
                 </label>
                 <select
@@ -229,7 +235,7 @@ export const MemoModal: React.FC<MemoModalProps> = ({
               {/* Tags */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  <Tag className="w-4 h-4 inline mr-2" />
+                  <CustomIcon name="user3296" size={16} className="inline mr-2" />
                   Tags (comma-separated)
                 </label>
                 <input

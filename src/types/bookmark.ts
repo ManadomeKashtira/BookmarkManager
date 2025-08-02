@@ -16,6 +16,7 @@ export interface Category {
   id: string;
   name: string;
   color: string; // Hex color string e.g., "#FF5733"
+  icon?: string; // Custom icon name from the icon library
   count: number;
   parentId?: string; // For hierarchical structure
   level?: number; // Depth level (0 = root, 1 = first level, etc.)

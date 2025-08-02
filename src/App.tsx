@@ -8,6 +8,8 @@ import { SettingsModal } from './components/SettingsModal';
 import { ImportExportModal } from './components/ImportExportModal';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { PasgenModal } from './components/PasgenModal';
+import { HealthCheckModal } from './components/HealthCheckModal';
+import { DuplicateManagementModal } from './components/DuplicateManagementModal';
 import { MemoView } from './components/MemoView';
 import { useBookmarks } from './hooks/useBookmarks';
 import { useSettings } from './hooks/useSettings';
@@ -31,6 +33,8 @@ function App() {
     setViewMode,
     sortBy,
     setSortBy,
+    healthFilter,
+    setHealthFilter,
     isLoading,
     stats,
     addBookmark,
@@ -43,6 +47,7 @@ function App() {
     addCategoryWithPath,
     renameCategory,
     deleteCategory,
+    updateCategoryIcon,
     toggleCategoryExpansion
   } = useBookmarks();
 
@@ -68,6 +73,8 @@ function App() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isPasgenModalOpen, setIsPasgenModalOpen] = useState(false);
+  const [isHealthCheckModalOpen, setIsHealthCheckModalOpen] = useState(false);
+  const [isDuplicateManagementModalOpen, setIsDuplicateManagementModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<'bookmarks' | 'memos'>('bookmarks');
   
   // Debug state changes
@@ -167,6 +174,8 @@ function App() {
             console.log('App.tsx: onShowPasgen called, setting isPasgenModalOpen to true'); // Debug log
             setIsPasgenModalOpen(true);
           }}
+          onShowHealthCheck={() => setIsHealthCheckModalOpen(true)}
+          onShowDuplicateManagement={() => setIsDuplicateManagementModalOpen(true)}
           onUpdateBookmarkCategory={updateBookmarkCategory}
           onRequestDeleteCategoryContents={deleteBookmarksByCategory}
           onRequestCreateNewFolder={() => {
@@ -177,6 +186,7 @@ function App() {
           }}
           onRenameCategory={renameCategory}
           onDeleteCategory={deleteCategory}
+          onUpdateCategoryIcon={updateCategoryIcon}
           onToggleCategoryExpansion={toggleCategoryExpansion}
           onAddCategoryWithPath={addCategoryWithPath}
         />
@@ -194,6 +204,8 @@ function App() {
                 selectedCategory={selectedCategory}
                 totalResults={bookmarks.length}
                 searchInputRef={searchInputRef}
+                healthFilter={healthFilter}
+                onHealthFilterChange={setHealthFilter}
               />
               
               <div className="p-6">
@@ -237,6 +249,7 @@ function App() {
                         cardBackgroundClass="bg-card hover:bg-card/80"
                         showDescriptions={settings.showDescriptions}
                         showVisitCount={settings.showVisitCount}
+                        showHealthStatus={true}
                       />
                     ))}
                   </div>
@@ -264,8 +277,11 @@ function App() {
         }}
         onAdd={handleAddBookmark}
         onAddMemo={handleAddMemo}
+        onUpdateBookmark={updateBookmark}
+        onDeleteBookmark={deleteBookmark}
         categories={categoryNames}
         editingBookmark={editingBookmark}
+        allBookmarks={allBookmarks}
       />
 
       <AnalyticsModal
@@ -345,6 +361,22 @@ function App() {
           console.log('PasgenModal onClose called'); // Debug log
           setIsPasgenModalOpen(false);
         }}
+      />
+
+      <HealthCheckModal
+        isOpen={isHealthCheckModalOpen}
+        onClose={() => setIsHealthCheckModalOpen(false)}
+        bookmarks={allBookmarks}
+        onUpdateBookmark={updateBookmark}
+        onDeleteBookmark={deleteBookmark}
+      />
+
+      <DuplicateManagementModal
+        isOpen={isDuplicateManagementModalOpen}
+        onClose={() => setIsDuplicateManagementModalOpen(false)}
+        bookmarks={allBookmarks}
+        onUpdateBookmark={updateBookmark}
+        onDeleteBookmark={deleteBookmark}
       />
     </div>
   );

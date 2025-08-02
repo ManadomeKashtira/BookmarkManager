@@ -6,6 +6,8 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 README.md
+.kiro/
+.gitignore
 
 
 # Runtime data
@@ -201,7 +203,6 @@ $RECYCLE.BIN/
 
 # Vim
 [._]*.s[a-v][a-z]
-!*.svg
 [._]*.sw[a-p]
 [._]s[a-rt-v][a-z]
 [._]ss[a-gi-z]

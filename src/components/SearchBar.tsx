@@ -12,6 +12,8 @@ interface SearchBarProps {
   selectedCategory: string;
   totalResults: number;
   searchInputRef?: React.RefObject<HTMLInputElement>;
+  healthFilter?: 'all' | 'healthy' | 'broken' | 'warning';
+  onHealthFilterChange?: (filter: 'all' | 'healthy' | 'broken' | 'warning') => void;
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({
@@ -23,7 +25,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onSortChange,
   selectedCategory,
   totalResults,
-  searchInputRef
+  searchInputRef,
+  healthFilter = 'all',
+  onHealthFilterChange
 }) => {
   const sortOptions = [
     { value: 'dateAdded-desc', label: 'Date Added (Newest First)', icon: '📅' },
@@ -99,6 +103,23 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           </select>
           <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
         </div>
+
+        {/* Health Filter Dropdown */}
+        {onHealthFilterChange && (
+          <div className="relative">
+            <select
+              value={healthFilter}
+              onChange={(e) => onHealthFilterChange(e.target.value as any)}
+              className="modern-input appearance-none pr-8 cursor-pointer"
+            >
+              <option value="all">All Links</option>
+              <option value="healthy">Healthy Links</option>
+              <option value="broken">Broken Links</option>
+              <option value="warning">Warning Links</option>
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          </div>
+        )}
 
         {/* Results Count */}
         <div className="text-sm text-gray-500 font-medium">

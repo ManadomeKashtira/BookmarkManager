@@ -2,13 +2,12 @@ import React, { useState, useEffect } from 'react';
 import {
   ChevronRight,
   ChevronDown,
-  Folder,
-  FolderOpen,
   MoreVertical,
   Edit,
-  Trash2,
-  FolderPlus
+  Trash2
 } from 'lucide-react';
+import { CustomIcon, type CustomIconName } from '@/lib/customIcons';
+import { IconSelectorModal } from './IconSelectorModal';
 import type { Category } from '@/types/bookmark';
 
 interface TreeCategoryItemProps {
@@ -20,6 +19,7 @@ interface TreeCategoryItemProps {
   onRename?: (oldPath: string, newName: string) => void;
   onDelete?: (categoryPath: string) => void;
   onCreateSubfolder?: (parentPath: string) => void;
+  onUpdateIcon?: (categoryPath: string, iconName: string) => void;
   children?: React.ReactNode;
   autoRename?: boolean;
   onAutoRenameComplete?: () => void;
@@ -39,6 +39,7 @@ export const TreeCategoryItem: React.FC<TreeCategoryItemProps> = ({
   onRename,
   onDelete,
   onCreateSubfolder,
+  onUpdateIcon,
   children,
   autoRename,
   onAutoRenameComplete,
@@ -50,7 +51,14 @@ export const TreeCategoryItem: React.FC<TreeCategoryItemProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(category.name);
   const [showContextMenu, setShowContextMenu] = useState(false);
+  const [showIconSelector, setShowIconSelector] = useState(false);
   const [clickCount, setClickCount] = useState(0);
+  const [currentIcon, setCurrentIcon] = useState(category.icon || "folder1484");
+
+  // Sync local icon state with category prop
+  useEffect(() => {
+    setCurrentIcon(category.icon || "folder1484");
+  }, [category.icon]);
 
   const hasChildren = category.children && category.children.length > 0;
   const indentWidth = level * 16; // 16px per level for better space utilization
@@ -141,6 +149,23 @@ export const TreeCategoryItem: React.FC<TreeCategoryItemProps> = ({
     setShowContextMenu(!showContextMenu);
   };
 
+  // Handle keyboard shortcuts for context menu
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'F2' && !isEditing) {
+      // F2 to rename
+      setIsEditing(true);
+      e.preventDefault();
+    } else if (e.key === 'Delete' && onDelete) {
+      // Delete key to delete
+      onDelete(category.fullPath || category.name);
+      e.preventDefault();
+    } else if (e.key === 'Enter' && !isEditing) {
+      // Enter to select
+      onSelect(category.fullPath || category.name);
+      e.preventDefault();
+    }
+  };
+
   const handleDelete = () => {
     if (onDelete) {
       onDelete(category.fullPath || category.name);
@@ -153,6 +178,23 @@ export const TreeCategoryItem: React.FC<TreeCategoryItemProps> = ({
       onCreateSubfolder(category.fullPath || category.name);
     }
     setShowContextMenu(false);
+  };
+
+  const handleChangeIcon = () => {
+    setShowIconSelector(true);
+    setShowContextMenu(false);
+  };
+
+  const handleIconSelect = (iconName: CustomIconName) => {
+    try {
+      setCurrentIcon(iconName); // Update local state immediately
+      if (onUpdateIcon) {
+        onUpdateIcon(category.fullPath || category.name, iconName);
+      }
+      setShowIconSelector(false); // Ensure modal closes
+    } catch (error) {
+      console.error('Failed to update icon:', error);
+    }
   };
 
   return (
@@ -171,9 +213,11 @@ export const TreeCategoryItem: React.FC<TreeCategoryItemProps> = ({
         onClick={handleSelect}
         onDoubleClick={handleDoubleClick}
         onContextMenu={handleContextMenu}
+        onKeyDown={handleKeyDown}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        tabIndex={0}
       >
         {/* Tree lines and expansion toggle */}
         <div className="flex items-center mr-2">
@@ -195,14 +239,15 @@ export const TreeCategoryItem: React.FC<TreeCategoryItemProps> = ({
           )}
         </div>
 
-        {/* Folder icon */}
-        <div className="mr-3">
-          {hasChildren && category.isExpanded ? (
-            <FolderOpen className="w-4 h-4" style={{ color: category.color }} />
-          ) : (
-            <Folder className="w-4 h-4" style={{ color: category.color }} />
-          )}
-        </div>
+                 {/* Folder icon */}
+         <div className="mr-3 flex items-center justify-center">
+           <CustomIcon 
+             key={`category-icon-${category.id}-${currentIcon}`}
+             name={currentIcon} 
+             size={16} 
+             style={{ color: category.color }} 
+           />
+         </div>
 
         {/* Category name */}
         <div className="flex-1 min-w-0">
@@ -251,7 +296,7 @@ export const TreeCategoryItem: React.FC<TreeCategoryItemProps> = ({
 
         {/* Context menu */}
         {showContextMenu && (
-          <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[160px]">
+          <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-[100] min-w-[160px] max-w-[200px]">
             <button
               onClick={() => {
                 setIsEditing(true);
@@ -262,13 +307,20 @@ export const TreeCategoryItem: React.FC<TreeCategoryItemProps> = ({
               <Edit className="w-4 h-4" />
               Rename
             </button>
-            <button
-              onClick={handleCreateSubfolder}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              <FolderPlus className="w-4 h-4" />
-              New Subfolder
-            </button>
+                         <button
+               onClick={handleChangeIcon}
+               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+             >
+               <CustomIcon name="gear1213" size={16} />
+               Change Icon
+             </button>
+             <button
+               onClick={handleCreateSubfolder}
+               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+             >
+               <CustomIcon name="folder1484" size={16} />
+               New Subfolder
+             </button>
             <button
               onClick={handleDelete}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-b-lg"
@@ -287,13 +339,21 @@ export const TreeCategoryItem: React.FC<TreeCategoryItemProps> = ({
         </div>
       )}
 
-      {/* Click outside to close context menu */}
-      {showContextMenu && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowContextMenu(false)}
-        />
-      )}
-    </div>
-  );
-};
+             {/* Click outside to close context menu */}
+       {showContextMenu && (
+         <div
+           className="fixed inset-0 z-[90]"
+           onClick={() => setShowContextMenu(false)}
+         />
+       )}
+
+       {/* Icon Selector Modal */}
+       <IconSelectorModal
+         isOpen={showIconSelector}
+         onClose={() => setShowIconSelector(false)}
+         onSelectIcon={handleIconSelect}
+         currentIcon={currentIcon}
+       />
+     </div>
+   );
+ };
