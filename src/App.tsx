@@ -11,6 +11,7 @@ import { PasgenModal } from './components/PasgenModal';
 import { HealthCheckModal } from './components/HealthCheckModal';
 import { DuplicateManagementModal } from './components/DuplicateManagementModal';
 import { MemoView } from './components/MemoView';
+import { PreviewTest } from './components/PreviewTest';
 import { useBookmarks } from './hooks/useBookmarks';
 import { useSettings } from './hooks/useSettings';
 import { useAnalytics } from './hooks/useAnalytics';
@@ -75,7 +76,7 @@ function App() {
   const [isPasgenModalOpen, setIsPasgenModalOpen] = useState(false);
   const [isHealthCheckModalOpen, setIsHealthCheckModalOpen] = useState(false);
   const [isDuplicateManagementModalOpen, setIsDuplicateManagementModalOpen] = useState(false);
-  const [currentView, setCurrentView] = useState<'bookmarks' | 'memos'>('bookmarks');
+  const [currentView, setCurrentView] = useState<'bookmarks' | 'memos' | 'preview-test'>('bookmarks');
   
   // Debug state changes
   console.log('App.tsx: isPasgenModalOpen state:', isPasgenModalOpen); // Debug log
@@ -250,13 +251,15 @@ function App() {
                         showDescriptions={settings.showDescriptions}
                         showVisitCount={settings.showVisitCount}
                         showHealthStatus={true}
+                        showPreviews={true}
+                        enablePreviewGeneration={true}
                       />
                     ))}
                   </div>
                 )}
               </div>
             </>
-          ) : (
+          ) : currentView === 'memos' ? (
             <MemoView
               memos={memos}
               categories={categoryNames}
@@ -265,6 +268,10 @@ function App() {
               onDeleteMemo={deleteMemo}
               onToggleFavorite={toggleMemoFavorite}
             />
+          ) : (
+            <div className="p-6">
+              <PreviewTest />
+            </div>
           )}
         </div>
       </div>

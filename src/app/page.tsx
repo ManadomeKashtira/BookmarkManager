@@ -360,6 +360,9 @@ export default function HomePage() {
                         cardBackgroundClass="bg-white"
                         showDescriptions={settings.showDescriptions}
                         showVisitCount={settings.showVisitCount}
+                        showHealthStatus={true}
+                        showPreviews={true}
+                        enablePreviewGeneration={true}
                       />
                     ))}
                   </div>
