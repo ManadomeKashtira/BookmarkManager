@@ -1,0 +1,74 @@
+/* Preview image containment styles */
+.preview-image-container {
+  position: relative;
+  overflow: hidden;
+  background-color: #f3f4f6;
+}
+
+.preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.2s ease-in-out;
+}
+
+.preview-image:hover {
+  transform: scale(1.05);
+}
+
+.preview-image-constrained {
+  max-width: 100% !important;
+  max-height: 100% !important;
+  width: auto;
+  height: auto;
+}
+
+.favicon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.favicon-image {
+  object-fit: contain;
+  object-position: center;
+}
+
+/* List view thumbnail styles */
+.list-preview-thumbnail {
+  width: 64px;
+  height: 48px;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #f3f4f6;
+  flex-shrink: 0;
+}
+
+.list-preview-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Grid view preview styles */
+.grid-preview-image {
+  width: 100%;
+  height: 192px; /* h-48 equivalent */
+  overflow: hidden;
+  background-color: #f3f4f6;
+}
+
+.grid-preview-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.2s ease-in-out;
+}
+
+.grid-preview-image:hover img {
+  transform: scale(1.05);
+}
