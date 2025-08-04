@@ -6,6 +6,7 @@ import type { Bookmark } from '@/types/bookmark';
 import { LinkHealthStatus } from '@/types/healthCheck';
 import { healthCheckService } from '@/services/healthCheckService';
 import { useLinkPreview } from '@/hooks/useLinkPreview';
+import '../styles/preview-images.css';
 
 interface BookmarkCardProps {
   bookmark: Bookmark;
@@ -38,7 +39,7 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [healthStatus, setHealthStatus] = useState<LinkHealthStatus | null>(null);
-  
+
   // Link preview hook
   const {
     preview,
@@ -77,7 +78,7 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
   const formatDate = (dateInput: Date | string) => {
     const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
     if (isNaN(date.getTime())) {
-        return 'Invalid Date';
+      return 'Invalid Date';
     }
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
@@ -131,15 +132,15 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
 
     // Use preview image if available, otherwise fall back to favicon
     const imageUrl = preview?.image || preview?.favicon;
-    
+
     if (!imageUrl) return null;
 
     return (
-      <div className="relative overflow-hidden rounded-lg bg-gray-100">
+      <div className="preview-image-container w-full h-full rounded-lg">
         <img
           src={imageUrl}
           alt={preview?.title || bookmark.title}
-          className="w-full h-full object-cover"
+          className="preview-image"
           onError={(e) => {
             // Hide image on error
             e.currentTarget.style.display = 'none';
@@ -219,14 +220,19 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
   const faviconDisplay = (() => {
     // Use preview favicon if available and showing previews
     const faviconUrl = showPreviews && preview?.favicon ? preview.favicon : null;
-    
+
     if (faviconUrl) {
       return (
         <img
           src={faviconUrl}
           alt="Site favicon"
-          className="flex-shrink-0"
-          style={{ width: viewMode === 'list' ? 24 : 32, height: viewMode === 'list' ? 24 : 32 }}
+          className="favicon-image"
+          style={{
+            width: viewMode === 'list' ? 24 : 32,
+            height: viewMode === 'list' ? 24 : 32,
+            maxWidth: viewMode === 'list' ? 24 : 32,
+            maxHeight: viewMode === 'list' ? 24 : 32
+          }}
           onError={(e) => {
             // Fall back to custom icon on error
             e.currentTarget.style.display = 'none';
@@ -234,17 +240,17 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
         />
       );
     }
-    
+
     // Fall back to custom icon
     return bookmark.favicon ? (
-      <CustomIcon 
-        name={bookmark.favicon as any} 
+      <CustomIcon
+        name={bookmark.favicon as any}
         size={viewMode === 'list' ? 24 : 32}
         className="flex-shrink-0 text-foreground"
       />
     ) : (
-      <CustomIcon 
-        name="folder1484" 
+      <CustomIcon
+        name="folder1484"
         size={viewMode === 'list' ? 24 : 32}
         className="flex-shrink-0 text-foreground"
       />
@@ -271,9 +277,23 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
         onMouseLeave={() => setIsHovered(false)}
       >
         <div className="flex items-center gap-4">
-          <div className="text-2xl flex-shrink-0 w-6 h-6 flex items-center justify-center">
-            {faviconDisplay}
-          </div>
+          {/* Preview thumbnail for list view */}
+          {showPreviews && preview?.image ? (
+            <div className="list-preview-thumbnail">
+              <img
+                src={preview.image}
+                alt={preview.title || bookmark.title}
+                onError={(e) => {
+                  // Fall back to favicon on error
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            </div>
+          ) : (
+            <div className="favicon-container w-6 h-6">
+              {faviconDisplay}
+            </div>
+          )}
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
@@ -330,9 +350,8 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
             </div>
 
             <div
-              className={`flex items-center gap-1 sm:gap-2 transition-opacity duration-200 ${
-                isHovered ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-              }`}
+              className={`flex items-center gap-1 sm:gap-2 transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                }`}
             >
               <button
                 title="Toggle Favorite"
@@ -373,7 +392,7 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
     <div className={`modern-card modern-card-hover overflow-hidden ${cardBackgroundClass}`}>
       {/* Preview Image */}
       {showPreviews && preview?.image && (
-        <div className="w-full h-48 mb-4">
+        <div className="grid-preview-image">
           {getPreviewImage()}
         </div>
       )}
@@ -403,11 +422,10 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
                 {getPreviewActions()}
                 <button
                   onClick={() => onToggleFavorite(bookmark.id)}
-                  className={`p-2 rounded-lg transition-all duration-200 ${
-                    bookmark.isFavorite
+                  className={`p-2 rounded-lg transition-all duration-200 ${bookmark.isFavorite
                       ? 'text-red-500 hover:bg-red-50'
                       : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
-                  }`}
+                    }`}
                   title={bookmark.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
                 >
                   <Heart className={`w-4 h-4 ${bookmark.isFavorite ? 'fill-current' : ''}`} />
@@ -442,7 +460,7 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
               {bookmark.description}
             </p>
           ) : null}
-          
+
           {getPreviewContent()}
         </div>
 
