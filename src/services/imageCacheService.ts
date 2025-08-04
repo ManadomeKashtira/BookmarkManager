@@ -165,10 +165,15 @@ export class ImageCacheService {
           newWidth = height * aspectRatio;
         }
 
+        // Ensure dimensions don't exceed maximums
+        newWidth = Math.min(newWidth, width);
+        newHeight = Math.min(newHeight, height);
+
         canvas.width = newWidth;
         canvas.height = newHeight;
 
-        // Draw and resize image
+        // Clear canvas and draw image
+        ctx.clearRect(0, 0, newWidth, newHeight);
         ctx.drawImage(img, 0, 0, newWidth, newHeight);
 
         // Convert to blob
